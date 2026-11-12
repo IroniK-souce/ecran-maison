@@ -29,12 +29,15 @@ function load(k){ try { return localStorage.getItem(k); } catch(e){ return null;
 function tick(){
   var d = new Date();
   $('clk').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
-  $('date').innerHTML = '<b>' + JOURS[d.getDay()] + '</b> ' + d.getDate() + ' ' + MOIS[d.getMonth()];
+  $('date').textContent = JOURS[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
+  $('calday').textContent = JOURS[d.getDay()];
+  $('calnum').textContent = d.getDate();
 }
 
 /* ---------- listes ---------- */
 function renderList(name){
   var items = lists[name], el = $('l-' + name);
+  $('n' + name).textContent = items.filter(function(x){ return !x.done; }).length;
   if(!items.length){ el.innerHTML = '<div class="empty">' + (name === 'courses' ? 'Rien à acheter' : 'Rien à faire') + '</div>'; return; }
   var h = '';
   for(var i = 0; i < items.length; i++){
@@ -111,6 +114,7 @@ function icon(c){
 }
 function loadMeteo(){
   var ville = config && config.ville;
+  $('wcity').textContent = ville || 'Météo';
   if(!ville){ $('mt').textContent = '–'; $('ms').textContent = 'Ville à régler'; $('mc').textContent = ''; return; }
   var p = (geo && geo.ville === ville) ? Promise.resolve(geo) :
     fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=fr&name=' + encodeURIComponent(ville))
