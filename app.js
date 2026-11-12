@@ -236,43 +236,54 @@ function carbuQuery(where){
     .then(function(r){ return r.json(); })
     .then(function(d){ if(!d || !d.results) throw new Error((d && (d.message || d.error_code)) || 'réponse vide'); return d.results; });
 }
+var carbuDiag = '';
+function numv(v){ if(v == null || v === '') return null; var n = parseFloat(String(v).replace(',', '.')); if(isNaN(n)) return null; if(n > 100) n = n / 1000; return n; }
+function normStation(x){
+  var g = x.geom || x.geo_point || x.geo_point_2d || {};
+  if(g.coordinates) g = {lon: g.coordinates[0], lat: g.coordinates[1]};
+  if(g.lat == null && x.latitude != null){ var la = parseFloat(x.latitude), lo = parseFloat(x.longitude); if(Math.abs(la) > 1000){ la /= 100000; lo /= 100000; } g = {lat: la, lon: lo}; }
+  x.geom = g;
+  x.km = (g.lat != null && !isNaN(g.lat)) ? distKm(geo.lat, geo.lon, g.lat, g.lon) : null;
+  CARBUS.forEach(function(c){ x[c[0]] = numv(x[c[0]]); });
+  return x;
+}
 function loadCarbu(){
   try { $('carbul').innerHTML = '<div class="empty">Recherche des stations…</div>'; } catch(e){}
   if(!geo){ $('carbul').innerHTML = '<div class="empty">Règle ta ville dans Réglages</div>'; return; }
-  var pt = "geom'POINT(" + geo.lon + ' ' + geo.lat + ")'", lastErr = '';
-  carbuQuery('within_distance(geom, ' + pt + ', 10km)')
-    .catch(function(e){ lastErr = e.message; return []; })
-    .then(function(r){ return r.length ? r : carbuQuery('"' + geo.ville + '"').catch(function(e){ lastErr += ' / ' + e.message; return []; }); })
-    .then(function(res){
-      var st = res.map(function(x){
-        var g = x.geom || {};
-        if(g.coordinates){ g = {lon: g.coordinates[0], lat: g.coordinates[1]}; x.geom = g; }
-        if(g.lat == null && x.latitude) { g = {lat: x.latitude / 100000, lon: x.longitude / 100000}; x.geom = g; }
-        x.km = (g.lat != null) ? distKm(geo.lat, geo.lon, g.lat, g.lon) : 99;
-        CARBUS.forEach(function(c){ if(typeof x[c[0]] === 'string') x[c[0]] = parseFloat(x[c[0]]); });
-        return x;
-      }).filter(function(x){ return x.km <= 15; });
-      carbu = {stations: st, at: new Date()};
-      var h = '';
-      CARBUS.forEach(function(c){
-        var best = st.filter(function(x){ return x[c[0]]; }).sort(function(a, b){ return a[c[0]] - b[c[0]]; })[0];
-        if(best) h += '<div class="cr"><span class="cn">' + c[1] + '</span><span class="cp">' + prix(best[c[0]]) + '</span><span class="cw">' + esc(cap(best.ville)) + ' · ' + best.km.toFixed(1).replace('.', ',') + ' km</span></div>';
-      });
-      $('carbul').innerHTML = h || '<div class="empty">Aucune station trouvée autour de ' + esc(geo.ville) + '</div>' + (lastErr ? '<div class="sub" style="font-size:11px;margin-top:6px">Détail : ' + esc(lastErr.slice(0, 160)) + '</div>' : '');
-      if(sheetKind === 'carbu') $('sheetbody').innerHTML = carbuSheet();
-    })
-    .catch(function(e){ $('carbul').innerHTML = '<div class="empty">Prix indisponibles pour le moment</div><div class="sub" style="font-size:11px;margin-top:6px">Détail : ' + esc(String(e && e.message || e).slice(0, 160)) + '</div>'; });
+  var pt = "geom'POINT(" + geo.lon + ' ' + geo.lat + ")'", diag = [];
+  var tries = ['within_distance(geom, ' + pt + ', 10km)', 'search(ville, "' + geo.ville + '")', '"' + geo.ville + '"'];
+  var attempt = function(i){
+    if(i >= tries.length) return Promise.resolve([]);
+    return carbuQuery(tries[i]).then(function(r){
+      r = r.map(normStation).filter(function(x){ return x.km == null || x.km <= 15; });
+      diag.push('essai ' + (i + 1) + ' : ' + r.length);
+      return r.length ? r : attempt(i + 1);
+    }, function(e){ diag.push('essai ' + (i + 1) + ' : erreur ' + e.message); return attempt(i + 1); });
+  };
+  attempt(0).then(function(st){
+    carbuDiag = diag.join(' · ');
+    if(st[0]) carbuDiag += ' · champs : ' + Object.keys(st[0]).slice(0, 40).join(', ');
+    carbu = {stations: st, at: new Date()};
+    var h = '';
+    CARBUS.forEach(function(c){
+      var best = st.filter(function(x){ return x[c[0]]; }).sort(function(a, b){ return a[c[0]] - b[c[0]]; })[0];
+      if(best) h += '<div class="cr"><span class="cn">' + c[1] + '</span><span class="cp">' + prix(best[c[0]]) + '</span><span class="cw">' + esc(cap(best.ville)) + (best.km != null ? ' · ' + best.km.toFixed(1).replace('.', ',') + ' km' : '') + '</span></div>';
+    });
+    $('carbul').innerHTML = h || '<div class="empty">Aucune station trouvée autour de ' + esc(geo.ville) + '</div><div class="sub" style="font-size:11px;margin-top:6px">Détail : ' + esc(carbuDiag.slice(0, 300)) + '</div>';
+    if(sheetKind === 'carbu') $('sheetbody').innerHTML = carbuSheet();
+  }).catch(function(e){ $('carbul').innerHTML = '<div class="empty">Prix indisponibles</div><div class="sub" style="font-size:11px;margin-top:6px">Détail : ' + esc(String(e && e.message || e)) + '</div>'; });
 }
 function carbuSheet(){
   if(!carbu) return '<div class="empty">Chargement des prix…</div>';
   var h = '<div class="sub">Les moins chers à moins de 10 km · données prix-carburants.gouv.fr · ' + pad(carbu.at.getHours()) + ':' + pad(carbu.at.getMinutes()) + '</div>';
+  if(!carbu.stations.length) h += '<div class="sub" style="font-size:12px;margin-top:10px">Diagnostic : ' + esc(carbuDiag) + '</div>';
   CARBUS.forEach(function(c){
     var l = carbu.stations.filter(function(x){ return x[c[0]]; }).sort(function(a, b){ return a[c[0]] - b[c[0]]; }).slice(0, 5);
     if(!l.length) return;
     h += '<div class="shead">' + c[1] + '</div>';
     l.forEach(function(x){
       var g = x.geom || {};
-      h += '<a class="crow" href="https://maps.apple.com/?q=' + encodeURIComponent(cap(x.adresse) + ', ' + cap(x.ville)) + (g.lat != null ? '&ll=' + g.lat + ',' + g.lon : '') + '" target="_blank" rel="noopener"><span class="cp">' + prix(x[c[0]]) + '</span><span style="flex:1;min-width:0">' + esc(cap(x.adresse)) + '<br><span class="sub">' + esc(cap(x.ville)) + ' · ' + x.km.toFixed(1).replace('.', ',') + ' km</span></span><span class="sub">Itinéraire ›</span></a>';
+      h += '<a class="crow" href="https://maps.apple.com/?q=' + encodeURIComponent(cap(x.adresse) + ', ' + cap(x.ville)) + (g.lat != null ? '&ll=' + g.lat + ',' + g.lon : '') + '" target="_blank" rel="noopener"><span class="cp">' + prix(x[c[0]]) + '</span><span style="flex:1;min-width:0">' + esc(cap(x.adresse)) + '<br><span class="sub">' + esc(cap(x.ville)) + (x.km != null ? ' · ' + x.km.toFixed(1).replace('.', ',') + ' km' : '') + '</span></span><span class="sub">Itinéraire ›</span></a>';
     });
   });
   return h;
