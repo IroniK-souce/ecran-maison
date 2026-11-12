@@ -12,7 +12,7 @@
 <title>Maison</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0;min-height:100%}
+html,body{margin:0;padding:0;min-height:100%}html{background:#2a3566}
 body{font-family:-apple-system,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;color:#1c1c1e;-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;
   background:#3a4a7a;background-image:radial-gradient(circle at 12% 18%,#f7a35c 0%,rgba(247,163,92,0) 38%),radial-gradient(circle at 88% 12%,#c86dd7 0%,rgba(200,109,215,0) 40%),radial-gradient(circle at 70% 85%,#3fb6c6 0%,rgba(63,182,198,0) 42%),radial-gradient(circle at 20% 90%,#5a6fe0 0%,rgba(90,111,224,0) 45%),linear-gradient(160deg,#4b3f86,#24345f);background-attachment:fixed}
 .wrap{max-width:1100px;margin:0 auto;padding:26px 28px 10px}
@@ -20,7 +20,7 @@ body{font-family:-apple-system,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sa
 .date{font-size:20px;font-weight:600;opacity:.9}
 .clk{font-size:92px;font-weight:700;line-height:1;letter-spacing:-2px;margin-top:2px}
 .grid{display:flex;flex-wrap:wrap;margin:0 -9px}
-.c1{width:25%;padding:9px}.c2{width:50%;padding:9px}
+.c1{width:25%;padding:9px}.c2{width:50%;padding:9px}.w.wx2{background:linear-gradient(180deg,#3b78c9 0%,#24539c 100%);color:#fff}
 .w{border-radius:26px;padding:16px 18px;height:100%;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);box-shadow:0 8px 30px rgba(20,20,60,.18);overflow:hidden;position:relative}
 .wt{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .link{background:none;border:0;color:#8e8e93;font-size:13px;font-weight:500;padding:0;-webkit-appearance:none;cursor:pointer;text-transform:none;letter-spacing:0}
@@ -71,10 +71,31 @@ button.main{background:#007aff;color:#fff}
 .set{margin:9px}
 .set label{display:block;font-size:13px;color:#8e8e93;margin:10px 0 6px}
 .set input{width:100%}
+.sect{color:#fff;font-size:22px;font-weight:700;margin:22px 9px 4px;text-shadow:0 1px 10px rgba(0,0,0,.15)}
+.fc{display:flex;margin-top:6px}
+.fd{flex:1;text-align:center;font-size:14px;font-weight:600}
+.fd .i{font-size:26px;margin:6px 0}
+.fd .lo{color:rgba(255,255,255,.7);font-weight:500}
+.sun{font-size:13px;margin-top:10px;opacity:.9}
+.note textarea{width:100%;min-height:110px;font-family:inherit;font-size:20px;line-height:1.35;border:0;background:transparent;resize:none;color:#3a3000;outline:none;padding:0;-webkit-appearance:none}
+.note{background:linear-gradient(180deg,#fff6b8,#ffe98a)}
+.note .wt{color:#a07800}
+.tm .big{font-size:52px;font-weight:300;font-variant-numeric:tabular-nums;text-align:center;margin:6px 0 10px;letter-spacing:-1px}
+.tm.ring{background:#ff9500;color:#fff}
+.tm .pr{display:flex;flex-wrap:wrap;justify-content:center}
+.tm .pr button{margin:3px;padding:8px 12px}
+.cd .row{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid rgba(60,60,67,.12)}
+.cd .row:last-child{border-bottom:0}
+.cd .n{font-size:26px;font-weight:700;color:#af52de;min-width:58px;line-height:1}
+.cd .n small{display:block;font-size:11px;font-weight:600;color:#8e8e93}
+.cd .tx{flex:1;font-size:16px;font-weight:600;min-width:0}
+.cd .x{background:none;color:#c7c7cc;font-size:18px;padding:4px 6px}
+.cd form{display:flex;margin-top:8px}
+.cd form input{margin-right:6px;min-width:0}
 .hide{display:none !important}
 #login{max-width:400px;margin:120px auto;text-align:center}
 #login input{width:100%;margin:14px 0;text-align:center}
-@media (max-width:820px){.c1{width:50%}.c2{width:100%}.clk{font-size:72px}}
+@media (max-width:820px){.c1{width:50%}.c2,.c3{width:100%!important}.clk{font-size:72px}}
 </style>
 </head>
 <body>
@@ -135,6 +156,31 @@ button.main{background:#007aff;color:#fff}
       <div class="pbar"><div id="bbar" style="width:0"></div></div>
       <form id="bdep" class="inl"><input id="bdepv" inputmode="decimal" placeholder="Nouvelle dépense (€)"><button type="submit">Ajouter</button></form>
       <form id="btot" class="inl hide"><input id="btotv" inputmode="decimal" placeholder="Budget du mois (€)"><button class="main" type="submit">OK</button></form>
+    </div></div>
+
+    <div style="width:100%"><div class="sect">Plus</div></div>
+
+    <div class="c2"><div class="w note">
+      <div class="wt"><span>Petit mot</span><span class="sub" id="motup"></span></div>
+      <textarea id="mot" placeholder="Laisse un mot à l'autre…"></textarea>
+    </div></div>
+
+    <div class="c2"><div class="w wx2">
+      <div class="wt" style="color:#fff"><span>Prochains jours</span><span id="wcity2" style="text-transform:none;font-weight:500;opacity:.85"></span></div>
+      <div class="fc" id="fc"><div class="fd">–</div></div>
+      <div class="sun" id="sun"></div>
+    </div></div>
+
+    <div class="c1"><div class="w tm" id="tmw">
+      <div class="wt"><span>Minuteur</span></div>
+      <div class="big" id="tmv">00:00</div>
+      <div class="pr"><button type="button" data-min="5">5 min</button><button type="button" data-min="10">10</button><button type="button" data-min="20">20</button><button type="button" data-min="45">45</button><button type="button" id="tmstop">Stop</button></div>
+    </div></div>
+
+    <div class="c3" style="width:75%;padding:9px"><div class="w cd">
+      <div class="wt"><span>À venir</span></div>
+      <div id="dates"><div class="empty">Chargement…</div></div>
+      <form id="df"><input id="dt" placeholder="Vacances, anniversaire…" style="flex:2"><input id="dd" type="date" style="flex:1"><button type="submit">+</button></form>
     </div></div>
   </div>
 

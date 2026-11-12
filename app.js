@@ -107,8 +107,8 @@ function loadJour(){
 /* ---------- météo (Open-Meteo, sans clé) ---------- */
 var WMO = {0:'Ciel dégagé',1:'Plutôt dégagé',2:'Quelques nuages',3:'Couvert',45:'Brouillard',48:'Brouillard',51:'Bruine',53:'Bruine',55:'Bruine',61:'Pluie faible',63:'Pluie',65:'Forte pluie',66:'Pluie verglaçante',67:'Pluie verglaçante',71:'Neige faible',73:'Neige',75:'Forte neige',80:'Averses',81:'Averses',82:'Fortes averses',95:'Orages',96:'Orages',99:'Orages'};
 var geo = null;
-function icon(c){
-  if(c === 0) return new Date().getHours() >= 19 || new Date().getHours() < 7 ? '🌙' : '☀️';
+function icon(c, day){
+  if(c === 0) return !day && (new Date().getHours() >= 19 || new Date().getHours() < 7) ? '🌙' : '☀️';
   if(c <= 2) return '⛅'; if(c === 3) return '☁️'; if(c <= 48) return '🌫️';
   if(c >= 71 && c <= 77) return '❄️'; if(c >= 95) return '⛈️'; return '🌧️';
 }
@@ -121,19 +121,103 @@ function loadMeteo(){
       .then(function(r){ return r.json(); })
       .then(function(d){ if(!d.results || !d.results.length) throw new Error('ville'); geo = {ville: ville, lat: d.results[0].latitude, lon: d.results[0].longitude}; return geo; });
   p.then(function(g){
-    return fetch('https://api.open-meteo.com/v1/forecast?timezone=Europe%2FParis&forecast_days=1&latitude=' + g.lat + '&longitude=' + g.lon +
-      '&current=temperature_2m,weather_code&hourly=precipitation_probability&daily=temperature_2m_max,precipitation_probability_max');
+    return fetch('https://api.open-meteo.com/v1/forecast?timezone=Europe%2FParis&forecast_days=5&latitude=' + g.lat + '&longitude=' + g.lon +
+      '&current=temperature_2m,weather_code&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset');
   }).then(function(r){ return r.json(); }).then(function(m){
     var t = Math.round(m.current.temperature_2m), code = m.current.weather_code;
     $('mt').textContent = t + '°';
     $('mi').textContent = icon(code);
     var resume = (WMO[code] || '') + ' · max ' + Math.round(m.daily.temperature_2m_max[0]) + '°';
     var h = new Date().getHours(), pluie = null, hp = m.hourly.precipitation_probability;
-    for(var i = h; i < hp.length; i++){ if(hp[i] >= 50){ pluie = i; break; } }
+    for(var i = h; i < 24 && i < hp.length; i++){ if(hp[i] >= 50){ pluie = i; break; } }
     if(pluie !== null) resume = (pluie <= h ? 'Pluie en ce moment' : 'Pluie vers ' + pluie + 'h') + ' · max ' + Math.round(m.daily.temperature_2m_max[0]) + '°';
     $('ms').textContent = resume;
     $('mc').textContent = pluie !== null ? 'Prends un parapluie' : (t <= 5 ? 'Couvre-toi bien' : '');
+    var fh = '', dd = m.daily;
+    for(var k = 0; k < dd.time.length && k < 5; k++){
+      var dt = new Date(dd.time[k] + 'T12:00:00');
+      fh += '<div class="fd"><div>' + (k === 0 ? 'Auj.' : JOURS[dt.getDay()].slice(0, 3) + '.') + '</div><div class="i">' + icon(dd.weather_code[k], true) + '</div><div>' + Math.round(dd.temperature_2m_max[k]) + '°</div><div class="lo">' + Math.round(dd.temperature_2m_min[k]) + '°</div></div>';
+    }
+    $('fc').innerHTML = fh;
+    $('wcity2').textContent = ville;
+    $('sun').textContent = '☀︎ Lever ' + String(dd.sunrise[0]).slice(11, 16) + ' · Coucher ' + String(dd.sunset[0]).slice(11, 16);
   }).catch(function(e){ $('ms').textContent = e && e.message === 'ville' ? 'Ville introuvable' : 'Météo indisponible'; });
+}
+
+
+/* ---------- petit mot ---------- */
+var motTimer = null, motFocus = false;
+function watchMot(){
+  root.child('mot').on('value', function(s){
+    var v = s.val() || {};
+    if(!motFocus) $('mot').value = v.texte || '';
+    if(v.at){ var d = new Date(v.at); $('motup').textContent = (d.toDateString() === new Date().toDateString() ? '' : d.getDate() + '/' + (d.getMonth() + 1) + ' ') + pad(d.getHours()) + ':' + pad(d.getMinutes()); } else $('motup').textContent = '';
+  });
+  $('mot').addEventListener('focus', function(){ motFocus = true; });
+  $('mot').addEventListener('blur', function(){ motFocus = false; saveMot(); });
+  $('mot').addEventListener('input', function(){ clearTimeout(motTimer); motTimer = setTimeout(saveMot, 900); });
+}
+function saveMot(){ clearTimeout(motTimer); root.child('mot').set({texte: $('mot').value.slice(0, 500), at: Date.now()}).catch(function(){ status('Mot non enregistré'); }); }
+
+/* ---------- à venir ---------- */
+var dates = [];
+function renderDates(){
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var list = dates.map(function(x){ var d = new Date(x.date + 'T00:00:00'); return {id: x.id, titre: x.titre, n: Math.round((d - today) / 86400000)}; })
+    .filter(function(x){ return !isNaN(x.n) && x.n >= 0; }).sort(function(a, b){ return a.n - b.n; });
+  if(!list.length){ $('dates').innerHTML = '<div class="empty">Ajoute une date à attendre : vacances, anniversaire…</div>'; return; }
+  var h = '';
+  list.slice(0, 5).forEach(function(x){
+    h += '<div class="row"><div class="n">' + (x.n === 0 ? '🎉' : x.n) + '<small>' + (x.n === 0 ? "aujourd'hui" : (x.n === 1 ? 'jour' : 'jours')) + '</small></div><div class="tx">' + esc(x.titre) + '</div><button class="x" type="button" data-del="' + esc(x.id) + '" aria-label="Supprimer">×</button></div>';
+  });
+  $('dates').innerHTML = h;
+}
+function watchDates(){
+  root.child('dates').on('value', function(s){
+    var v = s.val() || {}; dates = [];
+    for(var id in v){ if(v.hasOwnProperty(id) && v[id]) dates.push({id: id, titre: v[id].titre || '', date: v[id].date || ''}); }
+    renderDates();
+  });
+  $('dates').addEventListener('click', function(e){
+    var id = e.target.getAttribute && e.target.getAttribute('data-del');
+    if(id) root.child('dates/' + id).remove();
+  });
+  $('df').addEventListener('submit', function(e){
+    e.preventDefault();
+    var t = $('dt').value.trim(), d = $('dd').value;
+    if(!t || !/^\d{4}-\d{2}-\d{2}$/.test(d)){ $('dt').placeholder = 'Titre et date, s’il te plaît'; return; }
+    $('dt').value = ''; $('dd').value = '';
+    root.child('dates').push({titre: t.slice(0, 60), date: d}).catch(function(){ status('Date non enregistrée'); });
+  });
+}
+
+/* ---------- minuteur ---------- */
+var tmEnd = 0, tmInt = null, actx = null;
+function beep(){
+  if(!actx) return;
+  for(var i = 0; i < 3; i++){
+    var o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + i * 0.5;
+    o.frequency.value = 880; o.connect(g); g.connect(actx.destination);
+    g.gain.setValueAtTime(0.25, t0); g.gain.setValueAtTime(0, t0 + 0.3);
+    o.start(t0); o.stop(t0 + 0.35);
+  }
+}
+function tmShow(){
+  var left = Math.max(0, Math.round((tmEnd - Date.now()) / 1000));
+  $('tmv').textContent = pad(Math.floor(left / 60)) + ':' + pad(left % 60);
+  if(tmEnd && left === 0){ clearInterval(tmInt); tmInt = null; tmEnd = 0; $('tmw').className = 'w tm ring'; beep(); setTimeout(beep, 2000); }
+}
+function bindTimer(){
+  var bs = document.querySelectorAll('[data-min]');
+  for(var i = 0; i < bs.length; i++){
+    bs[i].addEventListener('click', function(e){
+      try { if(!actx){ var AC = window.AudioContext || window.webkitAudioContext; if(AC) actx = new AC(); } if(actx && actx.resume) actx.resume(); } catch(err){}
+      tmEnd = Date.now() + parseInt(e.target.getAttribute('data-min'), 10) * 60000;
+      $('tmw').className = 'w tm';
+      clearInterval(tmInt); tmInt = setInterval(tmShow, 1000); tmShow();
+    });
+  }
+  $('tmstop').addEventListener('click', function(){ clearInterval(tmInt); tmInt = null; tmEnd = 0; $('tmw').className = 'w tm'; $('tmv').textContent = '00:00'; });
 }
 
 /* ---------- événements ---------- */
@@ -204,13 +288,14 @@ function start(code){
     tick(); setInterval(tick, 15000);
     bind();
     watchList('courses'); watchList('taches');
+    watchMot(); watchDates(); bindTimer();
     root.child('budget').on('value', function(s){ budget = s.val(); renderBudget(); });
     root.child('config').on('value', function(s){ config = s.val(); loadMeteo(); });
     renderBudget(); loadJour();
     setInterval(loadJour, 30 * 60000);
     setInterval(loadMeteo, 30 * 60000);
     var lastDay = new Date().getDate();
-    setInterval(function(){ if(new Date().getDate() !== lastDay){ lastDay = new Date().getDate(); loadJour(); renderBudget(); } }, 60000);
+    setInterval(function(){ if(new Date().getDate() !== lastDay){ lastDay = new Date().getDate(); loadJour(); renderBudget(); renderDates(); loadMeteo(); } }, 60000);
   }, function(){
     store(KEY, null); root = null;
     show('app', false); show('login', true);
