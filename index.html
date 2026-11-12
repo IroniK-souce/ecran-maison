@@ -15,7 +15,7 @@
 html,body{margin:0;padding:0;min-height:100%}html{background:#2a3566}
 body{font-family:-apple-system,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;color:#1c1c1e;-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;
   background:#3a4a7a;background-image:radial-gradient(circle at 12% 18%,#f7a35c 0%,rgba(247,163,92,0) 38%),radial-gradient(circle at 88% 12%,#c86dd7 0%,rgba(200,109,215,0) 40%),radial-gradient(circle at 70% 85%,#3fb6c6 0%,rgba(63,182,198,0) 42%),radial-gradient(circle at 20% 90%,#5a6fe0 0%,rgba(90,111,224,0) 45%),linear-gradient(160deg,#4b3f86,#24345f);background-attachment:fixed}
-.wrap{max-width:1100px;margin:0 auto;padding:26px 28px 10px}
+.wrap{max-width:1100px;margin:0 auto;padding:26px 28px 10px;position:relative}
 .lock{color:#fff;text-align:center;margin:4px 0 22px;text-shadow:0 1px 12px rgba(0,0,0,.15)}
 .date{font-size:20px;font-weight:600;opacity:.9}
 .clk{font-size:92px;font-weight:700;line-height:1;letter-spacing:-2px;margin-top:2px}
@@ -123,6 +123,10 @@ body.night .lock{margin-top:28vh;opacity:.4;text-shadow:none}
 body.night .clk{font-size:180px;font-weight:200;letter-spacing:-4px}
 body.night .date{font-size:26px}
 .vinfo{display:none}
+.vbtn{position:absolute;top:24px;right:28px;z-index:5;display:flex;align-items:center;font-size:17px;font-weight:600;color:#fff;padding:12px 20px 12px 16px;border-radius:26px;background:rgba(255,255,255,.22);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,.35);box-shadow:0 6px 20px rgba(20,20,60,.18)}
+.vbtn .vm{font-size:22px;margin-right:8px;line-height:1}
+.vbtn:active{-webkit-transform:scale(.95);transform:scale(.95)}
+body.night .vbtn{display:none}
 body.night .vinfo{display:block;font-size:30px;margin-top:18px;line-height:1.5}
 body.night .vinfo span{font-size:20px;opacity:.85}
 #lockbox{-webkit-transition:-webkit-transform 2s;transition:transform 2s}
@@ -176,6 +180,7 @@ body.night .vinfo span{font-size:20px;opacity:.85}
 </div>
 
 <div class="wrap hide" id="app">
+  <button type="button" id="vopen" class="vbtn" aria-label="Mettre en veille"><span class="vm">☾</span>Veille</button>
   <div class="lock"><div id="lockbox"><div class="date" id="date"></div><div class="clk" id="clk">--:--</div><div class="vinfo" id="vinfo"></div></div></div>
 
   <div class="grid">
@@ -262,13 +267,13 @@ body.night .vinfo span{font-size:20px;opacity:.85}
     <div style="margin-top:16px"> <button id="cclose" type="button">Fermer</button> <span id="cmsg" class="sub"></span></div>
   </div>
 
-  <div class="st"><span id="st">Connexion…</span> · <button class="link" type="button" id="vopen">☾ Veille</button> · <button class="link" type="button" id="sopen">Réglages</button></div>
+  <div class="st"><span id="st">Connexion…</span> · <button class="link" type="button" id="sopen">Réglages</button></div>
 </div>
 
 <div id="sheet" class="hide"><div class="panel" id="sheetpanel"><div class="shtop"><h2 id="sheettitle"></h2><button type="button" id="sheetclose" aria-label="Fermer">✕</button></div><div id="sheetbody"></div></div></div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="app.js?v=1794488937"></script>
+<script src="app.js?v=1794489080"></script>
 </body>
 </html>
