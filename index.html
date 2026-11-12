@@ -103,6 +103,33 @@ button.main{background:#007aff;color:#fff}
 .cd .x{background:none;color:#c7c7cc;font-size:18px;padding:4px 6px}
 .cd form{display:flex;margin-top:8px}
 .cd form input{margin-right:6px;min-width:0}
+.tap{cursor:pointer;-webkit-transition:-webkit-transform .15s;transition:transform .15s}
+.tap:active{-webkit-transform:scale(.98);transform:scale(.98)}
+#sheet{position:fixed;left:0;top:0;right:0;bottom:0;z-index:50;background:rgba(10,12,30,.45);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:40px 16px}
+#sheet .panel{max-width:640px;margin:0 auto;border-radius:30px;padding:22px 24px 26px;background:rgba(255,255,255,.95);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#sheet .panel.wx{background:linear-gradient(180deg,#4a8ad8,#24539c);color:#fff}
+#sheet .panel.note{background:linear-gradient(180deg,#fff6b8,#ffe98a)}
+.shtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.shtop h2{margin:0;font-size:26px;font-weight:700}
+#sheetclose{width:36px;height:36px;border-radius:50%;padding:0;font-size:18px;background:rgba(118,118,128,.2);color:inherit}
+.sbig{font-size:72px;font-weight:200;line-height:1}
+.sbig span{font-size:50px;vertical-align:middle}
+.ssub{font-size:16px;margin-top:6px;opacity:.85}
+.shead{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;opacity:.7;margin:22px 0 8px}
+.sheetstats div{width:33.33% !important}
+.hscroll{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -6px}
+.hscroll>div{flex-shrink:0;width:58px;text-align:center;font-size:13px;line-height:1.5}
+.hscroll .hi{font-size:22px}
+.hscroll .pp{font-size:11px;color:#9fd3ff;min-height:16px}
+.arow{padding:12px 0;border-bottom:1px solid rgba(60,60,67,.12);font-size:18px;font-weight:600}
+.arow .ah{display:inline-block;min-width:80px;color:#ff3b30;font-weight:600}
+.big-list .row{font-size:20px;padding:12px 0}
+.big-list .box{width:26px;height:26px;line-height:23px;font-size:14px}
+.sadd{display:flex;margin-top:14px}
+.sadd input{flex:1;margin-right:8px;font-size:18px;padding:12px 14px}
+.splat{height:200px;border-radius:22px;overflow:hidden;background:linear-gradient(135deg,#ffd27a,#f39c3d);font-size:100px;display:flex;align-items:center;justify-content:center}
+.splat img{width:100%;height:100%;object-fit:cover}
+.smot{width:100%;min-height:240px;font-family:inherit;font-size:24px;line-height:1.4;border:0;background:transparent;resize:none;color:#3a3000;outline:none;-webkit-appearance:none}
 .hide{display:none !important}
 #login{max-width:400px;margin:120px auto;text-align:center}
 #login input{width:100%;margin:14px 0;text-align:center}
@@ -198,8 +225,10 @@ button.main{background:#007aff;color:#fff}
   <div class="st"><span id="st">Connexion…</span> · <button class="link" type="button" id="sopen">Réglages</button></div>
 </div>
 
+<div id="sheet" class="hide"><div class="panel" id="sheetpanel"><div class="shtop"><h2 id="sheettitle"></h2><button type="button" id="sheetclose" aria-label="Fermer">✕</button></div><div id="sheetbody"></div></div></div>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="app.js?v=1794487740"></script>
+<script src="app.js?v=1794488136"></script>
 </body>
 </html>

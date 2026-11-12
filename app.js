@@ -45,6 +45,7 @@ function renderList(name){
     h += '<div class="row' + (it.done ? ' done' : '') + '" data-col="' + name + '" data-id="' + esc(it.id) + '"><span class="box">' + (it.done ? '✓' : '') + '</span>' + esc(it.name) + '</div>';
   }
   el.innerHTML = h;
+  if(sheetKind === name) openSheet(name);
 }
 function watchList(name){
   root.child(name).on('value', function(snap){
@@ -87,7 +88,7 @@ function loadJour(){
 
 /* ---------- météo (Open-Meteo, sans clé) ---------- */
 var WMO = {0:'Ciel dégagé',1:'Plutôt dégagé',2:'Quelques nuages',3:'Couvert',45:'Brouillard',48:'Brouillard',51:'Bruine',53:'Bruine',55:'Bruine',61:'Pluie faible',63:'Pluie',65:'Forte pluie',66:'Pluie verglaçante',67:'Pluie verglaçante',71:'Neige faible',73:'Neige',75:'Forte neige',80:'Averses',81:'Averses',82:'Fortes averses',95:'Orages',96:'Orages',99:'Orages'};
-var geo = null;
+var geo = null, lastMeteo = null;
 function icon(c, day){
   if(c === 0) return (day === false || (day === undefined && (new Date().getHours() >= 19 || new Date().getHours() < 7))) ? '🌙' : '☀️';
   if(c <= 2) return '⛅'; if(c === 3) return '☁️'; if(c <= 48) return '🌫️';
@@ -105,6 +106,7 @@ function loadMeteo(){
     return fetch('https://api.open-meteo.com/v1/forecast?timezone=Europe%2FParis&forecast_days=7&latitude=' + g.lat + '&longitude=' + g.lon +
       '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code&hourly=precipitation_probability,temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max,precipitation_sum&wind_speed_unit=kmh');
   }).then(function(r){ return r.json(); }).then(function(m){
+    lastMeteo = m;
     var t = Math.round(m.current.temperature_2m), code = m.current.weather_code;
     $('mt').textContent = t + '°';
     $('mi').textContent = icon(code);
@@ -219,6 +221,89 @@ function bindTimer(){
   $('tmstop').addEventListener('click', function(){ clearInterval(tmInt); tmInt = null; tmEnd = 0; $('tmw').className = 'w tm'; $('tmv').textContent = '00:00'; });
 }
 
+
+/* ---------- widgets cliquables : vue détaillée ---------- */
+var sheetKind = null;
+function closeSheet(){ sheetKind = null; show('sheet', false); document.body.style.overflow = ''; }
+function rowsHtml(name){
+  var items = lists[name], h = '';
+  if(!items.length) return '<div class="empty">' + (name === 'courses' ? 'Rien à acheter' : 'Rien à faire') + '</div>';
+  for(var i = 0; i < items.length; i++){
+    var it = items[i];
+    h += '<div class="row' + (it.done ? ' done' : '') + '" data-col="' + name + '" data-id="' + esc(it.id) + '"><span class="box">' + (it.done ? '✓' : '') + '</span>' + esc(it.name) + '</div>';
+  }
+  return h;
+}
+function openSheet(kind){
+  var t = '', h = '', cls = '';
+  if(kind === 'meteo' && lastMeteo){
+    var m = lastMeteo, now = new Date().getHours(), d = m.daily;
+    t = (config && config.ville) || 'Météo'; cls = 'wx';
+    h += '<div class="sbig">' + Math.round(m.current.temperature_2m) + '° <span>' + icon(m.current.weather_code) + '</span></div>';
+    h += '<div class="ssub">' + esc($('ms').textContent) + '</div>';
+    h += '<div class="stats sheetstats">' + $('wst').innerHTML + '<div><b>' + String(d.sunrise[0]).slice(11, 16) + '</b>Lever</div><div><b>' + String(d.sunset[0]).slice(11, 16) + '</b>Coucher</div></div>';
+    h += '<div class="shead">Heure par heure</div><div class="hscroll">';
+    for(var j = now; j < now + 24 && j < m.hourly.temperature_2m.length; j++){
+      var hr = j % 24;
+      h += '<div><div>' + (j === now ? 'Maint.' : hr + 'h') + '</div><div class="hi">' + icon(m.hourly.weather_code[j], hr >= 7 && hr < 19) + '</div><div><b>' + Math.round(m.hourly.temperature_2m[j]) + '°</b></div><div class="pp">' + (m.hourly.precipitation_probability[j] >= 20 ? m.hourly.precipitation_probability[j] + ' %' : '') + '</div></div>';
+    }
+    h += '</div><div class="shead">Cette semaine</div><div class="fc">' + $('fc').innerHTML + '</div>';
+  } else if(kind === 'agenda'){
+    t = 'Agenda'; var ag = (jour && jour.agenda) || [];
+    if(!ag.length) h = '<div class="empty">' + (jour && jour.agenda_relie ? 'Aucun rendez-vous aujourd\'hui ni demain' : 'Agenda pas encore relié') + '</div>';
+    var tk = todayKey(new Date()), last = '';
+    ag.forEach(function(a){
+      if(a.date !== last){ last = a.date; h += '<div class="shead">' + (a.date === tk ? "Aujourd'hui" : 'Demain') + '</div>'; }
+      h += '<div class="arow"><span class="ah">' + esc(a.heure || 'Journée') + '</span>' + esc(a.titre) + '</div>';
+    });
+  } else if(kind === 'courses' || kind === 'taches'){
+    t = kind === 'courses' ? 'Courses' : 'Maison'; cls = 'rem ' + (kind === 'courses' ? 'or' : 'bl');
+    h = '<div class="list big-list">' + rowsHtml(kind) + '</div><form class="sadd" data-col="' + kind + '"><input placeholder="Ajouter…" autocomplete="off"><button class="main" type="submit">Ajouter</button></form>' +
+        '<div style="text-align:right;margin-top:12px"><button class="link" type="button" data-clear2="' + kind + '">Retirer ' + (kind === 'courses' ? 'les cochés' : 'les faites') + '</button></div>';
+  } else if(kind === 'plat'){
+    var p = (jour && jour.plat) || {};
+    t = 'Ce soir';
+    h = '<div class="splat">' + ($('pimg').innerHTML) + '</div><div class="pn" style="font-size:28px;margin-top:14px">' + esc(p.nom || 'En attente de la suggestion du jour') + '</div><div class="ssub">' + esc($('pd').textContent) + '</div>';
+    if(p.url) h += '<a class="btn" href="' + esc(p.url) + '" target="_blank" rel="noopener" style="margin-top:16px">Voir la recette</a>';
+    var rec = ((jour && jour.plats_recents) || []).slice(1, 8);
+    if(rec.length) h += '<div class="shead">Déjà proposés</div>' + rec.map(function(x){ return '<div class="arow">' + esc(x) + '</div>'; }).join('');
+  } else if(kind === 'mot'){
+    t = 'Petit mot'; cls = 'note';
+    h = '<textarea id="mot2" class="smot" placeholder="Laisse un mot à l\'autre…">' + esc($('mot').value) + '</textarea><div style="text-align:right;margin-top:12px"><button class="main" type="button" id="mot2ok">Enregistrer</button></div>';
+  } else return;
+  var first = sheetKind !== kind;
+  sheetKind = kind;
+  $('sheettitle').textContent = t;
+  $('sheetpanel').className = 'panel ' + cls;
+  if(kind === 'mot' && !first) return;
+  $('sheetbody').innerHTML = h;
+  if(first){ show('sheet', true); document.body.style.overflow = 'hidden'; $('sheetbody').scrollTop = 0; }
+  var f = document.querySelector('#sheetbody form.sadd');
+  if(f) f.addEventListener('submit', function(e){
+    e.preventDefault(); var inp = f.querySelector('input'), v = inp.value.trim(); if(!v) return; inp.value = '';
+    root.child(kind).push({name: v.slice(0, 80), done: false, at: Date.now()}).catch(function(){ status('Ajout impossible'); });
+  });
+  var c2 = document.querySelector('[data-clear2]');
+  if(c2) c2.addEventListener('click', function(){
+    var up = {}; lists[kind].forEach(function(x){ if(x.done) up[x.id] = null; }); root.child(kind).update(up);
+  });
+  if(kind === 'mot') $('mot2ok').addEventListener('click', function(){ $('mot').value = $('mot2').value; saveMot(); closeSheet(); });
+}
+function bindSheets(){
+  var map = [['.w.wx', 'meteo'], ['.w.wx2', 'meteo'], ['.w.cal', 'agenda'], ['.rem.or', 'courses'], ['.rem.bl', 'taches'], ['.w.plat', 'plat'], ['.w.note', 'mot']];
+  map.forEach(function(x){
+    var el = document.querySelector(x[0]); if(!el) return;
+    el.className += ' tap';
+    el.addEventListener('click', function(e){
+      var t = e.target;
+      while(t && t !== el){ var tag = t.tagName; if(tag === 'INPUT' || tag === 'BUTTON' || tag === 'A' || tag === 'TEXTAREA' || tag === 'FORM' || (t.getAttribute && t.getAttribute('data-id'))) return; t = t.parentNode; }
+      openSheet(x[1]);
+    });
+  });
+  $('sheetclose').addEventListener('click', closeSheet);
+  $('sheet').addEventListener('click', function(e){ if(e.target === $('sheet')) closeSheet(); });
+}
+
 /* ---------- événements ---------- */
 function bind(){
   document.addEventListener('click', function(e){
@@ -270,7 +355,7 @@ function start(code){
     tick(); setInterval(tick, 15000);
     bind();
     watchList('courses'); watchList('taches');
-    watchMot(); watchDates(); bindTimer();
+    watchMot(); watchDates(); bindTimer(); bindSheets();
     root.child('config').on('value', function(s){ config = s.val(); loadMeteo(); });
     loadJour();
     setInterval(loadJour, 30 * 60000);
