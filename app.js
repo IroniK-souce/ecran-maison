@@ -442,6 +442,16 @@ function bindTimer(){
 
 
 /* ---------- widgets cliquables : vue détaillée ---------- */
+var menuSel = {};
+function menuIngHtml(menu){
+  var list = [], heads = {};
+  menu.forEach(function(mm){ if(menuSel[mm.date] && (mm.ingredients || []).length){ heads[list.length] = mm.nom; list = list.concat(mm.ingredients); } });
+  if(!list.length) return '<div class="empty" style="margin-top:14px">Aucune recette cochée pour l\'instant.</div>';
+  var h = ingHtml(list).replace('<div class="shead">Ingrédients</div>', '<div class="shead">Ingrédients des recettes cochées</div>');
+  var idx = 0;
+  h = h.replace(/<div class="row ing/g, function(m){ return (heads.hasOwnProperty(idx) ? '<div class="ihead">' + esc(heads[idx]) + '</div>' : '') + (idx++, m); });
+  return h;
+}
 var curIng = [];
 function ingHtml(ing){
   curIng = ing || [];
@@ -504,16 +514,16 @@ function openSheet(kind){
     var rec = ((jour && jour.plats_recents) || []).slice(1, 8);
     if(rec.length) h += '<div class="shead">Déjà proposés</div>' + rec.map(function(x){ return '<div class="arow">' + esc(x) + '</div>'; }).join('');
   } else if(kind === 'menu'){
-    var menu = (jour && jour.menu) || [], all = [], seen = {};
+    var menu = (jour && jour.menu) || [];
     t = 'Menu de la semaine';
     if(!menu.length) h = '<div class="empty">Le menu de la semaine arrive à la prochaine mise à jour du matin.</div>';
-    menu.forEach(function(mm){
-      var d = new Date(mm.date + 'T12:00:00');
-      h += '<div class="mrow"><div class="md">' + (mm.date === todayKey(new Date()) ? "Ce soir" : JOURS[d.getDay()] + ' ' + d.getDate()) + '</div><div style="flex:1;min-width:0"><div class="mn">' + esc(mm.nom) + '</div><div class="sub">' + esc([mm.temps, mm.source].filter(Boolean).join(' · ')) + '</div></div>' +
+    else h = '<div class="sub" style="margin-bottom:4px">Coche les recettes que tu vas cuisiner, puis ajoute leurs ingrédients aux courses.</div>';
+    menu.forEach(function(mm, i){
+      var d = new Date(mm.date + 'T12:00:00'), on = !!menuSel[mm.date];
+      h += '<div class="mrow' + (on ? ' msel' : '') + '" data-mi="' + i + '"><span class="box mbox">' + (on ? '✓' : '') + '</span><div class="md">' + (mm.date === todayKey(new Date()) ? "Ce soir" : JOURS[d.getDay()] + ' ' + d.getDate()) + '</div><div style="flex:1;min-width:0"><div class="mn">' + esc(mm.nom) + '</div><div class="sub">' + esc([mm.temps, mm.source].filter(Boolean).join(' · ')) + '</div></div>' +
         (mm.url ? '<a class="mlink" href="' + esc(mm.url) + '" target="_blank" rel="noopener">Recette</a>' : '') + '</div>';
-      (mm.ingredients || []).forEach(function(x){ var k = x.toLowerCase(); if(!seen[k]){ seen[k] = 1; all.push(x); } });
     });
-    if(all.length) h += ingHtml(all).replace('<div class="shead">Ingrédients</div>', '<div class="shead">Tous les ingrédients de la semaine</div>');
+    h += '<div id="mingr">' + menuIngHtml(menu) + '</div>';
   } else if(kind === 'wifi'){
     var w = (config && config.wifi) || {};
     t = 'Wi-Fi invités';
@@ -542,7 +552,12 @@ function openSheet(kind){
   if(c2) c2.addEventListener('click', function(){
     var up = {}; lists[kind].forEach(function(x){ if(x.done && x.rep == null) up[x.id] = null; }); root.child(kind).update(up);
   });
-  if((kind === 'plat' || kind === 'menu') && $('ingadd')){
+  if(kind === 'plat' || kind === 'menu') bindIng();
+  if(kind === 'menu') bindMenuSel();
+  if(kind === 'mot') $('mot2ok').addEventListener('click', function(){ $('mot').value = $('mot2').value; saveMot(); closeSheet(); });
+}
+function bindIng(){
+  if(!$('ingadd')) return;
     var ingl = $('ingl'), ingRefresh = function(){
       var n = ingl.querySelectorAll('.row.sel').length;
       $('ingadd').textContent = n ? 'Ajouter ' + n + ' ingrédient' + (n > 1 ? 's' : '') + ' aux courses' : 'Rien à ajouter';
@@ -570,7 +585,20 @@ function openSheet(kind){
       }, function(){ $('ingmsg').textContent = 'Ajout impossible pour le moment'; });
     });
   }
-  if(kind === 'mot') $('mot2ok').addEventListener('click', function(){ $('mot').value = $('mot2').value; saveMot(); closeSheet(); });
+function bindMenuSel(){
+  var menu = (jour && jour.menu) || [];
+  var rows = document.querySelectorAll('#sheetbody .mrow[data-mi]');
+  for(var i = 0; i < rows.length; i++){
+    rows[i].addEventListener('click', function(e){
+      if(e.target.tagName === 'A') return;
+      var mm = menu[parseInt(this.getAttribute('data-mi'), 10)]; if(!mm) return;
+      menuSel[mm.date] = !menuSel[mm.date];
+      this.className = 'mrow' + (menuSel[mm.date] ? ' msel' : '');
+      this.querySelector('.mbox').textContent = menuSel[mm.date] ? '✓' : '';
+      $('mingr').innerHTML = menuIngHtml(menu);
+      bindIng();
+    });
+  }
 }
 function bindSheets(){
   var map = [['.w.wifi', 'wifi'], ['.w.menu', 'menu'], ['.w.carbu', 'carbu'], ['.w.wx', 'meteo'], ['.w.wx2', 'meteo'], ['.w.cal', 'agenda'], ['.rem.or', 'courses'], ['.rem.bl', 'taches'], ['.w.plat', 'plat'], ['.w.note', 'mot']];
