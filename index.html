@@ -294,6 +294,56 @@ body.night #night{display:block}
 #login{max-width:420px;margin:120px auto;text-align:center;padding:28px}
 #login .fld{text-align:center;margin:16px 0}
 
+
+/* ---------- thème clair (journée) ---------- */
+html,body{-webkit-transition:background-color .8s;transition:background-color .8s}
+body.clair{--bg:#eceef2;--rail:#f8f9fb;--card:#ffffff;--card2:#eef0f3;--line:rgba(20,25,40,.08);--tx:#1b1d22;--tx2:#545862;--tx3:#6b6f78;--gr:#1d9a55;--pu:#7b4fd8;--bl:#2f74d0;--ye:#a77800}
+html.clair{background:#eceef2}
+body.clair .card,body.clair .sc{box-shadow:0 4px 14px rgba(20,30,60,.07)}
+body.clair .rbtn.on{background:rgba(255,140,40,.15);color:#c25e00}
+body.clair .rlogo{color:#fff}
+body.clair.tod-matin:before{background:radial-gradient(circle at 8% 0%,rgba(255,170,90,.18) 0%,rgba(255,170,90,0) 45%)}
+body.clair.tod-jour:before{background:radial-gradient(circle at 10% 0%,rgba(94,168,255,.14) 0%,rgba(94,168,255,0) 45%)}
+body.clair .box{border-color:#9da1a9;color:#fff}
+body.clair .k-or .ic,body.clair .k-or .cnt,body.clair .plat .ic{color:#c25e00;background:rgba(255,140,40,.14)}
+body.clair .mult,body.clair .ihead,body.clair .mday.on .md,body.clair .mrow.today .md{color:#c25e00}
+body.clair .chip{background:rgba(255,140,40,.13);color:#a14f00}
+body.clair .tag{background:rgba(20,25,40,.06)}
+body.clair .tag.p{background:rgba(255,190,40,.2);color:#7a5600}
+body.clair .tag.r{background:rgba(47,116,208,.12)}
+body.clair .tag.q{background:rgba(123,79,216,.12)}
+body.clair .info.warn{background:#fff1e0;border-color:#ffd3a3;color:#8a4600}
+body.clair .info.alert{background:#ffe8e8;border-color:#ffbcbc;color:#a3191b}
+body.clair .info.cold{background:#e7f0ff;border-color:#bcd4ff;color:#1d4f91}
+body.clair .info.prio{background:#fff6d6;border-color:#f3dc8c;color:#6e5100}
+body.clair .wx{background:linear-gradient(180deg,#3f80d6 0%,#2b62b5 100%);border-color:transparent;color:#fff}
+body.clair .wx .stats b,body.clair .wx .fd{color:#fff}
+body.clair .wx .stats div,body.clair .wx .wc,body.clair .wx .hscroll>div{color:#dbe8ff}
+body.clair .wx .fd .lo{color:#c8dafa}
+body.clair .wx .hscroll b,body.clair .wx h3,body.clair .wx .ws{color:#fff}body.clair .wx .hscroll .pp,body.clair .wx .fd .pp{color:#cfe4ff}
+body.clair .wx .shead{color:#dbe8ff !important}
+body.clair .wx .meta{color:#dbe8ff}
+body.clair .plat{background:linear-gradient(120deg,#fff6ec 0%,#ffe9d3 100%);border-color:#ffdcb8}
+body.clair .pk{color:#c25e00}
+body.clair .pk span,body.clair .pmeta{color:#7d6048}
+body.clair .pbtns .b{background:rgba(255,255,255,.75);color:#1b1d22}
+body.clair .pemo{background:radial-gradient(circle at 50% 45%,rgba(255,170,90,.35) 0%,rgba(255,159,67,.08) 70%)}
+body.clair .mot{background:#fff7cf;border-color:#f1df92}
+body.clair .mot .ic{background:rgba(200,150,0,.15);color:#9a7000}
+body.clair .mottx{color:#3b3100}
+body.clair .mottx.vide{color:#8e7f45}
+body.clair .mot .meta{color:#7a6a30}
+body.clair .mday.on{background:#fff1e0;box-shadow:inset 0 0 0 1px #ffcf99}
+body.clair .tmw.ring{background:#fff1df;border-color:#ff9f43}
+body.clair .tmw.ring .tmv{color:#c25e00}
+body.clair .crow .cp{color:#1d9a55}
+body.clair #sheet{background:rgba(30,35,50,.4)}
+body.clair #sheet .panel{background:#fff;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+body.clair .smot{background:#fff7cf;color:#3b3100}
+body.clair .splat{background:radial-gradient(circle at 50% 45%,rgba(255,170,90,.35) 0%,rgba(255,159,67,.06) 70%),#fff3e6}
+body.clair .qr{box-shadow:inset 0 0 0 1px var(--line)}
+body.clair .b.pri,body.clair .qadd button{color:#2a1700}
+
 /* écrans étroits : portrait, téléphone */
 @media (max-width:899px), (max-height:560px) and (max-width:1100px){
   body{overflow:auto}
@@ -447,7 +497,7 @@ body.night #night{display:block}
 
     <!-- RÉGLAGES -->
     <section class="page" id="p-reglages">
-      <div class="top ptop"><div><h1>Réglages</h1><div class="dline"><span id="st">Connexion…</span> · <span id="ver">version 12/11 21:50</span></div></div><div class="tright"><div class="clk">--:--</div></div></div>
+      <div class="top ptop"><div><h1>Réglages</h1><div class="dline"><span id="st">Connexion…</span> · <span id="ver">version 12/11 22:00</span></div></div><div class="tright"><div class="clk">--:--</div></div></div>
       <div class="scroll"><div class="sets">
         <div class="card">
           <h3>Foyer</h3>
@@ -480,6 +530,8 @@ body.night #night{display:block}
           <label class="lb" for="vgrand">Taille du texte sur l'accueil</label>
           <select id="vgrand" class="fld"><option value="0">Normale</option><option value="1">Plus grande (lecture à distance)</option></select>
           <div class="sub" style="margin-top:10px">Le mode « plus grand » affiche moins d'éléments par carte, mais en plus gros.</div>
+          <label class="lb" for="vtheme">Couleur du fond</label>
+          <select id="vtheme" class="fld"><option value="auto">Automatique : clair le jour, sombre le soir</option><option value="sombre">Toujours sombre</option><option value="clair">Toujours clair</option></select>
         </div>
         <div class="card">
           <h3>Sauvegarde des données</h3>
@@ -501,6 +553,6 @@ body.night #night{display:block}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="app.js?v=1794516394"></script>
+<script src="app.js?v=1794516720"></script>
 </body>
 </html>

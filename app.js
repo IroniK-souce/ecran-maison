@@ -85,6 +85,22 @@ function membres(){
 }
 
 /* ---------- horloge et moment de la journée ---------- */
+/* thème : clair entre le lever et le coucher du soleil (8 h à 18 h à défaut de météo) */
+function themeMode(){ var t = load('ecran-theme'); return t === 'sombre' || t === 'clair' ? t : 'auto'; }
+function isDay(d){
+  var mins = d.getHours() * 60 + d.getMinutes(), lev = 8 * 60, cou = 18 * 60;
+  if(lastMeteo && lastMeteo.daily && lastMeteo.daily.sunrise){
+    var tk = todayKey(d), i = lastMeteo.daily.time.indexOf(tk);
+    if(i >= 0){ var a = String(lastMeteo.daily.sunrise[i]).slice(11, 16).split(':'), b = String(lastMeteo.daily.sunset[i]).slice(11, 16).split(':'); lev = a[0] * 60 + +a[1] + 15; cou = b[0] * 60 + +b[1] - 15; }
+  }
+  return mins >= lev && mins < cou;
+}
+function applyTheme(d){
+  var m = themeMode(), clair = m === 'clair' || (m === 'auto' && isDay(d || new Date()));
+  if((document.body.className.indexOf('clair') >= 0) === clair) return;
+  cls(document.body, 'clair', clair); cls(document.documentElement, 'clair', clair);
+  var tc = document.querySelector('meta[name=theme-color]'); if(tc) tc.setAttribute('content', clair ? '#eceef2' : '#16171a');
+}
 function grand(){ return load('ecran-grand') === '1'; }
 function applyGrand(){ cls(document.body, 'grand', grand()); }
 function tod(h){ return h >= 5 && h < 11 ? 'matin' : h >= 11 && h < 18 ? 'jour' : h >= 18 && h < 23 ? 'soir' : 'nuit'; }
@@ -100,6 +116,7 @@ function tick(){
   $('date').textContent = ds;
   var b = document.body.className.replace(/\s*tod-\w+/g, '');
   document.body.className = b + ' tod-' + m;
+  applyTheme(d);
 }
 function weekNum(d){ var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); var day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); var y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y) / 86400000 + 1) / 7); }
 
@@ -548,7 +565,7 @@ function loadMeteo(){
       '<div><b>' + Math.round(c.wind_speed_10m) + ' km/h</b>Vent' + (c.wind_gusts_10m >= 40 ? ', rafales ' + Math.round(c.wind_gusts_10m) : '') + '</div>' +
       '<div><b>' + Math.round(d0.precipitation_probability_max[0] || 0) + ' %</b>Pluie' + (d0.precipitation_sum[0] >= 1 ? ' ' + Math.round(d0.precipitation_sum[0]) + ' mm' : '') + '</div>';
     $('fc').innerHTML = forecastHtml(m, 7);
-    safe(renderInfos); safe(renderShortcuts);
+    safe(renderInfos); safe(renderShortcuts); safe(function(){ applyTheme(); });
     if(curPage === 'infos') safe(renderMeteoDetail);
   }).catch(function(e){ $('ms').textContent = e && e.message === 'ville' ? 'Ville introuvable' : 'Météo indisponible pour le moment'; });
 }
@@ -1046,6 +1063,7 @@ function fillSettings(){
   $('scsel').innerHTML = l.map(function(k, i){ return '<label class="lb">Tuile ' + (i + 1) + '</label><select class="fld" data-sci="' + i + '">' + opts(k) + '</select>'; }).join('');
   $$('#scsel select').forEach(function(s){ s.addEventListener('change', function(){ var cur = scList(); cur[parseInt(s.getAttribute('data-sci'), 10)] = s.value; store('ecran-raccourcis', JSON.stringify(cur)); renderShortcuts(); toast('Raccourcis enregistrés sur cet appareil'); }); });
   $('vgrand').value = grand() ? '1' : '0';
+  $('vtheme').value = themeMode();
   var bk = loadJSON('ecran-sauvegarde', null);
   $('bkinfo').textContent = bk && bk.at ? 'Dernière copie automatique sur cet appareil : ' + new Date(bk.at).toLocaleDateString('fr-FR') + ' à ' + hm(bk.at) + '.' : 'Pas encore de copie automatique sur cet appareil.';
 }
@@ -1066,6 +1084,7 @@ function bindSettings(){
     root.child('config').update(up).then(function(){ $('cmsg').textContent = 'Enregistré ✓'; }, function(){ $('cmsg').textContent = 'Impossible d\'enregistrer'; });
   });
   $('vgrand').addEventListener('change', function(){ store('ecran-grand', this.value === '1' ? '1' : null); applyGrand(); setTimeout(function(){ safe(renderHomeCourses); safe(renderHomeTaches); safe(renderEvents); }, 50); toast('Taille du texte enregistrée sur cet appareil'); });
+  $('vtheme').addEventListener('change', function(){ store('ecran-theme', this.value === 'auto' ? null : this.value); applyTheme(); toast('Couleur du fond enregistrée sur cet appareil'); });
   $('bkdl').addEventListener('click', exportData);
   $('bkrest').addEventListener('click', function(){
     var bk = loadJSON('ecran-sauvegarde', null);
