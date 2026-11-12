@@ -453,15 +453,22 @@ function renderEvents(){
 function fmtH(h){ if(!h) return ''; var p = h.split(':'); return parseInt(p[0], 10) + ' h' + (p[1] && p[1] !== '00' ? ' ' + p[1] : ''); }
 function plage(x){ return fmtH(x.debut) + (x.fin ? '–' + fmtH(x.fin) : ''); }
 function hc(h){ if(!h) return ''; var p = h.split(':'); return parseInt(p[0], 10) + 'h' + (p[1] && p[1] !== '00' ? p[1] : ''); }
+function persoCls(qui){ return qui === 'Lisa' ? 'work' : qui === 'Anthony' ? 'work2' : 'work3'; }
+/* « CGR 10 h–11 h 30, 13 h–17 h » : regroupe les créneaux qui ont le même intitulé */
+function plages(l){
+  var out = [], last = null;
+  l.forEach(function(x){ if(last && last.nom === x.nom) last.p.push(plage(x)); else { last = {nom: x.nom, p: [plage(x)]}; out.push(last); } });
+  return out.map(function(g){ return esc(g.nom) + ' ' + g.p.join(', '); }).join(' · ');
+}
 function planningPill(){
-  var pl = (jour && jour.planning) || [], now = new Date(), tk = todayKey(now), tmk = todayKey(addDays(now, 1)), hm0 = pad(now.getHours()) + ':' + pad(now.getMinutes()), byNom = {}, out = [];
-  pl.forEach(function(x){ var k = (x.qui ? x.qui + ' · ' : '') + x.nom; (byNom[k] = byNom[k] || []).push(x); });
-  for(var k in byNom){
-    var l = byNom[k], cur = null, reste = l.filter(function(x){ return x.date === tk && (x.fin || '24:00') > hm0; });
+  var pl = (jour && jour.planning) || [], now = new Date(), tk = todayKey(now), tmk = todayKey(addDays(now, 1)), hm0 = pad(now.getHours()) + ':' + pad(now.getMinutes()), by = {}, out = [];
+  pl.forEach(function(x){ var k = x.qui || 'Travail'; (by[k] = by[k] || []).push(x); });
+  for(var k in by){
+    var l = by[k], cur = null, reste = l.filter(function(x){ return x.date === tk && (x.fin || '24:00') > hm0; }), c = 'info ' + persoCls(k);
     reste.forEach(function(x){ if(x.debut <= hm0) cur = x; });
-    if(cur) out.push('<div class="info work" data-act="sheet" data-k="agenda"><b>💼 ' + esc(k) + '</b>en ce moment, jusqu\'à ' + fmtH(cur.fin) + (reste.length > 1 ? ' · puis ' + reste.slice(1).map(plage).join(', ') : '') + '</div>');
-    else if(reste.length) out.push('<div class="info work" data-act="sheet" data-k="agenda"><b>💼 ' + esc(k) + ' aujourd\'hui</b>' + reste.map(plage).join(', ') + '</div>');
-    else { var dem = l.filter(function(x){ return x.date === tmk; }); out.push('<div class="info work" data-act="sheet" data-k="agenda"><b>💼 ' + esc(k) + ' demain</b>' + (dem.length ? dem.map(plage).join(', ') : 'repos') + '</div>'); }
+    if(cur) out.push('<div class="' + c + '" data-act="page" data-p="planning"><b>💼 ' + esc(k) + '</b>' + esc(cur.nom) + ' en ce moment, jusqu\'à ' + fmtH(cur.fin) + (reste.length > 1 ? ' · puis ' + reste.slice(1).map(plage).join(', ') : '') + '</div>');
+    else if(reste.length) out.push('<div class="' + c + '" data-act="page" data-p="planning"><b>💼 ' + esc(k) + ' aujourd\'hui</b>' + plages(reste) + '</div>');
+    else { var dem = l.filter(function(x){ return x.date === tmk; }); out.push('<div class="' + c + '" data-act="page" data-p="planning"><b>💼 ' + esc(k) + ' demain</b>' + (dem.length ? plages(dem) : 'repos') + '</div>'); }
   }
   return out;
 }
@@ -474,7 +481,7 @@ function calendarHtml(opt){
   ((jour && jour.planning) || []).forEach(function(x){
     if(!blocks[x.date] || !x.debut) return;
     var a = hmin(x.debut), b = x.fin ? hmin(x.fin) : a + 60; if(b <= a) b = 24 * 60;
-    blocks[x.date].push({a: a, b: b, k: 'work', t: (x.qui ? x.qui + ' · ' : '') + x.nom, h: hc(x.debut) + (x.fin ? '–' + hc(x.fin) : '')}); any = true;
+    blocks[x.date].push({a: a, b: b, k: persoCls(x.qui), t: (x.qui ? x.qui + ' · ' : '') + x.nom, h: hc(x.debut) + (x.fin ? '–' + hc(x.fin) : '')}); any = true;
   });
   if(!opt.travail) ((jour && jour.agenda) || []).forEach(function(x){
     if(!blocks[x.date]) return;
@@ -504,7 +511,8 @@ function calendarHtml(opt){
     if(d === tk && nowM >= lo && nowM <= hi) h += '<div class="cal-now" style="top:' + ((nowM - lo) * px).toFixed(1) + 'px"></div>';
     h += '</div></div>';
   });
-  return h + '</div></div>' + (opt.travail ? '' : '<div class="sub" style="margin-top:10px"><span class="lg work"></span>Planning de travail &nbsp; <span class="lg rdv"></span>Rendez-vous Antho&amp;Lisa</div>');
+  var gens = []; ((jour && jour.planning) || []).forEach(function(x){ var q = x.qui || 'Travail'; if(gens.indexOf(q) < 0) gens.push(q); });
+  return h + '</div></div><div class="sub" style="margin-top:10px">' + gens.map(function(q){ return '<span class="lg ' + persoCls(q) + '"></span>' + esc(q) + ' &nbsp; '; }).join('') + (opt.travail ? '' : '<span class="lg rdv"></span>Rendez-vous Antho&amp;Lisa') + '</div>';
 }
 function renderPlanningPage(){
   var el = $('pl-cal'), pl = (jour && jour.planning) || [], tot = 0, n = 0, now = new Date(), tk = todayKey(now);
@@ -514,7 +522,7 @@ function renderPlanningPage(){
   $('pl-sum').textContent = pl.length ? n + ' service' + (n > 1 ? 's' : '') + ' sur 7 jours · ' + Math.floor(tot / 60) + ' h' + (tot % 60 ? ' ' + pad(tot % 60) : '') + ' de travail' : 'Services de travail des 7 prochains jours';
   var nxt = null, hm0 = pad(now.getHours()) + ':' + pad(now.getMinutes());
   pl.forEach(function(x){ if(!nxt && (x.date > tk || (x.date === tk && (x.fin || '24:00') > hm0))) nxt = x; });
-  $('pl-next').innerHTML = nxt ? (nxt.date === tk && nxt.debut <= hm0 ? 'En ce moment · jusqu\'à ' + fmtH(nxt.fin) : 'Prochain service : <b>' + (nxt.date === tk ? "aujourd'hui" : dayLabel(nxt.date, true).toLowerCase()) + ' ' + plage(nxt) + '</b>') : '';
+  $('pl-next').innerHTML = nxt ? (nxt.date === tk && nxt.debut <= hm0 ? (nxt.qui ? esc(nxt.qui) + ' ' : '') + 'en ce moment, jusqu\'à ' + fmtH(nxt.fin) : 'Prochain service : <b>' + (nxt.qui ? esc(nxt.qui) + ' ' : '') + (nxt.date === tk ? "aujourd'hui" : dayLabel(nxt.date, true).toLowerCase()) + ' ' + plage(nxt) + '</b>') : '';
   var h = Math.max(260, el.clientHeight - 70);
   el.innerHTML = calendarHtml({travail: true, h: window.innerWidth >= 900 ? h : 460});
 }
