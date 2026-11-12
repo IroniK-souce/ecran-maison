@@ -103,6 +103,28 @@ button.main{background:#007aff;color:#fff}
 .cd .x{background:none;color:#c7c7cc;font-size:18px;padding:4px 6px}
 .cd form{display:flex;margin-top:8px}
 .cd form input{margin-right:6px;min-width:0}
+.w.wx{display:flex;padding:0}
+.wxl{width:46%;padding:16px 18px;border-right:1px solid rgba(255,255,255,.18)}
+.wxr{flex:1;padding:16px 18px;min-width:0;display:flex;flex-direction:column}
+.wxr .fc{flex:1;display:flex;flex-direction:column;justify-content:space-around}
+.wxr .fd{font-size:14px;padding:5px 0}
+.wxr .fd .dn{width:44px}
+.wxr .fd .pp{display:none}
+.wxr .fd .lo,.wxr .fd .hi{width:30px}
+.wxr .fd .rb{margin:0 8px}
+.plat.pc{flex-direction:column}
+.plat.pc .thumb{width:100%;min-height:0;height:120px;font-size:60px}
+.plat.pc .pinfo{padding:12px 16px 16px}
+.plat.pc .pn{font-size:18px}
+body.night{background:#000 !important;background-image:none !important;min-height:100vh}
+body.night .wrap{min-height:100vh}
+body.night .grid,body.night .st,body.night #sheet{display:none !important}
+body.night .lock{margin-top:28vh;opacity:.4;text-shadow:none}
+body.night .clk{font-size:180px;font-weight:200;letter-spacing:-4px}
+body.night .date{font-size:26px}
+.reptag{font-size:12px;color:#007aff;background:rgba(0,122,255,.1);padding:3px 8px;border-radius:8px;margin-left:8px;white-space:nowrap}
+.row .x{background:none;color:#c7c7cc;font-size:20px;padding:2px 8px;margin-left:4px}
+#srep{font-size:16px;margin-right:8px;border:0;border-radius:11px;background:rgba(118,118,128,.12);padding:0 8px;color:#1c1c1e;max-width:150px}
 .tap{cursor:pointer;-webkit-transition:-webkit-transform .15s;transition:transform .15s}
 .tap:active{-webkit-transform:scale(.98);transform:scale(.98)}
 #sheet{position:fixed;left:0;top:0;right:0;bottom:0;z-index:50;background:rgba(10,12,30,.45);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:40px 16px}
@@ -133,7 +155,7 @@ button.main{background:#007aff;color:#fff}
 .hide{display:none !important}
 #login{max-width:400px;margin:120px auto;text-align:center}
 #login input{width:100%;margin:14px 0;text-align:center}
-@media (max-width:820px){.c1{width:50%}.c2,.c3{width:100%!important}.grid>.c1:nth-child(4){-webkit-box-ordinal-group:0;order:-2;width:100%}.grid>.c1:nth-child(5){order:-1;width:100%}.lock{margin-bottom:12px}.clk{font-size:72px}}
+@media (max-width:820px){.w.wx{display:block}.wxl{width:auto;border-right:0}.c1{width:50%}.c2,.c3{width:100%!important}.grid>.c1:nth-child(4){-webkit-box-ordinal-group:0;order:-2;width:100%}.grid>.c1:nth-child(5){order:-1;width:100%}.lock{margin-bottom:12px}.clk{font-size:72px}}
 </style>
 </head>
 <body>
@@ -148,13 +170,20 @@ button.main{background:#007aff;color:#fff}
   <div class="lock"><div class="date" id="date"></div><div class="clk" id="clk">--:--</div></div>
 
   <div class="grid">
-    <div class="c1"><div class="w wx">
-      <div class="city" id="wcity">Météo</div>
-      <div class="tr"><div class="t" id="mt">–</div><div class="wxi" id="mi">⛅</div></div>
-      <div class="s" id="ms"></div>
-      <div class="cs" id="mc"></div>
-      <div class="stats" id="wst"></div>
-      <div class="hrs" id="whr"></div>
+    <div class="c2"><div class="w wx">
+      <div class="wxl">
+        <div class="city" id="wcity">Météo</div>
+        <div class="tr"><div class="t" id="mt">–</div><div class="wxi" id="mi">⛅</div></div>
+        <div class="s" id="ms"></div>
+        <div class="cs" id="mc"></div>
+        <div class="stats" id="wst"></div>
+        <div class="hrs" id="whr"></div>
+      </div>
+      <div class="wxr">
+        <div class="wt" style="color:#fff"><span>Cette semaine</span></div>
+        <div class="fc" id="fc"><div class="fd">–</div></div>
+        <div class="sun" id="sun"></div>
+      </div>
     </div></div>
 
     <div class="c1"><div class="w cal">
@@ -164,10 +193,14 @@ button.main{background:#007aff;color:#fff}
       <div class="sub" id="agup" style="font-size:11px;margin-top:4px"></div>
     </div></div>
 
-    <div class="c2"><div class="w wx2">
-      <div class="wt" style="color:#fff"><span>Cette semaine</span><span id="wcity2" style="text-transform:none;font-weight:500;opacity:.85"></span></div>
-      <div class="fc" id="fc"><div class="fd">–</div></div>
-      <div class="sun" id="sun"></div>
+    <div class="c1"><div class="w plat pc">
+      <div class="thumb" id="pimg">🍲</div>
+      <div class="pinfo">
+        <div class="kick">Ce soir</div>
+        <div class="pn" id="pn">En attente de la suggestion du jour</div>
+        <div class="sub" id="pd" style="margin-top:6px"></div>
+        <a class="btn" id="purl" href="#" target="_blank" rel="noopener" style="display:none">Voir la recette</a>
+      </div>
     </div></div>
 
     <div class="c1"><div class="w rem or">
@@ -198,17 +231,8 @@ button.main{background:#007aff;color:#fff}
       <div class="pr"><button type="button" data-min="5">5 min</button><button type="button" data-min="10">10</button><button type="button" data-min="20">20</button><button type="button" data-min="45">45</button><button type="button" id="tmstop">Stop</button></div>
     </div></div>
 
-    <div class="c3" style="width:75%;padding:9px"><div class="w plat">
-      <div class="thumb" id="pimg">🍲</div>
-      <div class="pinfo">
-        <div class="kick">Ce soir</div>
-        <div class="pn" id="pn">En attente de la suggestion du jour</div>
-        <div class="sub" id="pd" style="margin-top:6px"></div>
-        <a class="btn" id="purl" href="#" target="_blank" rel="noopener" style="display:none">Voir la recette</a>
-      </div>
-    </div></div>
 
-    <div class="c3" style="width:100%;padding:9px"><div class="w cd">
+    <div class="c3" style="width:75%;padding:9px"><div class="w cd">
       <div class="wt"><span>À venir</span></div>
       <div id="dates"><div class="empty">Chargement…</div></div>
       <form id="df"><input id="dt" placeholder="Vacances, anniversaire…" style="flex:2"><input id="dd" type="date" style="flex:1"><button type="submit">+</button></form>
@@ -229,6 +253,6 @@ button.main{background:#007aff;color:#fff}
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="app.js?v=1794488136"></script>
+<script src="app.js?v=1794488410"></script>
 </body>
 </html>

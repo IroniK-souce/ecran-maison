@@ -28,15 +28,42 @@ function load(k){ try { return localStorage.getItem(k); } catch(e){ return null;
 /* ---------- horloge ---------- */
 function tick(){
   var d = new Date();
+  nightCheck(d);
   $('clk').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
   $('date').textContent = JOURS[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
   $('calday').textContent = JOURS[d.getDay()];
   $('calnum').textContent = d.getDate();
 }
 
+/* ---------- mode nuit, retour à l'accueil, rechargement nocturne ---------- */
+var lastTouch = Date.now(), wakeUntil = 0, loadedAt = Date.now();
+function nightCheck(d){
+  var h = d.getHours(), night = (h >= 22 || h < 7) && Date.now() > wakeUntil;
+  var cls = document.body.className.replace(/\s*night/g, '');
+  document.body.className = night ? cls + ' night' : cls;
+  if(Date.now() - lastTouch > 60000){
+    var a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA');
+    if(!typing){
+      if(sheetKind) closeSheet();
+      if((window.pageYOffset || document.documentElement.scrollTop) > 0) window.scrollTo(0, 0);
+    }
+  }
+  if(h === 3 && d.getMinutes() >= 30 && d.getMinutes() < 45 && Date.now() - loadedAt > 3600000 && !sheetKind){
+    location.replace(location.pathname + '?r=' + Date.now() + location.hash);
+  }
+}
+function touched(){
+  lastTouch = Date.now();
+  if(document.body.className.indexOf('night') >= 0){ wakeUntil = Date.now() + 120000; nightCheck(new Date()); }
+}
+document.addEventListener('touchstart', touched, true);
+document.addEventListener('mousedown', touched, true);
+document.addEventListener('keydown', touched, true);
+
 /* ---------- listes ---------- */
 function renderList(name){
-  var items = lists[name], el = $('l-' + name);
+  var today = new Date().getDay();
+  var items = lists[name].filter(function(x){ return x.rep == null || x.rep === today; }), el = $('l-' + name);
   $('n' + name).textContent = items.filter(function(x){ return !x.done; }).length;
   if(!items.length){ el.innerHTML = '<div class="empty">' + (name === 'courses' ? 'Rien à acheter' : 'Rien à faire') + '</div>'; return; }
   var h = '';
@@ -50,12 +77,23 @@ function renderList(name){
 function watchList(name){
   root.child(name).on('value', function(snap){
     var arr = [], v = snap.val() || {};
-    for(var id in v){ if(v.hasOwnProperty(id) && v[id]) arr.push({id: id, name: v[id].name || '', done: !!v[id].done, at: v[id].at || 0}); }
+    for(var id in v){ if(v.hasOwnProperty(id) && v[id]) arr.push({id: id, name: v[id].name || '', done: !!v[id].done, at: v[id].at || 0, rep: (typeof v[id].rep === 'number' ? v[id].rep : null), doneAt: v[id].doneAt || 0}); }
     arr.sort(function(a, b){ return a.at - b.at; });
-    lists[name] = arr; renderList(name); status('Synchronisé');
+    lists[name] = arr; resetRecurring(name); renderList(name); status('Synchronisé');
   }, function(){ status('Accès refusé · vérifie le code'); });
 }
 
+/* tâches qui reviennent chaque semaine : décochées automatiquement le jour venu */
+function resetRecurring(name){
+  var now = new Date(), up = {}, any = false;
+  lists[name].forEach(function(x){
+    if(x.rep == null || !x.done) return;
+    var occ = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    occ.setDate(occ.getDate() - ((now.getDay() - x.rep + 7) % 7));
+    if((x.doneAt || 0) < occ.getTime()){ up[x.id + '/done'] = false; any = true; }
+  });
+  if(any) root.child(name).update(up);
+}
 /* ---------- agenda + plat (data.json mis à jour chaque jour) ---------- */
 function todayKey(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 function renderJour(){
@@ -135,12 +173,11 @@ function loadMeteo(){
     for(var k = 0; k < n; k++){
       var dt = new Date(dd.time[k] + 'T12:00:00'), lo = dd.temperature_2m_min[k], hi = dd.temperature_2m_max[k];
       var left = (lo - wmin) / span * 100, width = Math.max(6, (hi - lo) / span * 100);
-      fh += '<div class="fd"><span class="dn">' + (k === 0 ? "Aujourd'hui" : JOURS[dt.getDay()]) + '</span><span class="i">' + icon(dd.weather_code[k], true) + '</span>' +
+      fh += '<div class="fd"><span class="dn">' + (k === 0 ? 'Auj.' : JOURS[dt.getDay()].slice(0, 3) + '.') + '</span><span class="i">' + icon(dd.weather_code[k], true) + '</span>' +
         '<span class="pp">' + (dd.precipitation_probability_max[k] >= 30 ? Math.round(dd.precipitation_probability_max[k]) + ' %' : '') + '</span>' +
         '<span class="lo">' + Math.round(lo) + '°</span><span class="rb"><i style="left:' + left.toFixed(1) + '%;width:' + width.toFixed(1) + '%"></i></span><span class="hi">' + Math.round(hi) + '°</span></div>';
     }
     $('fc').innerHTML = fh;
-    $('wcity2').textContent = ville;
     $('sun').textContent = '☀︎ Lever ' + String(dd.sunrise[0]).slice(11, 16) + ' · Coucher ' + String(dd.sunset[0]).slice(11, 16);
   }).catch(function(e){ $('ms').textContent = e && e.message === 'ville' ? 'Ville introuvable' : 'Météo indisponible'; });
 }
@@ -230,7 +267,8 @@ function rowsHtml(name){
   if(!items.length) return '<div class="empty">' + (name === 'courses' ? 'Rien à acheter' : 'Rien à faire') + '</div>';
   for(var i = 0; i < items.length; i++){
     var it = items[i];
-    h += '<div class="row' + (it.done ? ' done' : '') + '" data-col="' + name + '" data-id="' + esc(it.id) + '"><span class="box">' + (it.done ? '✓' : '') + '</span>' + esc(it.name) + '</div>';
+    h += '<div class="row' + (it.done ? ' done' : '') + '" data-col="' + name + '" data-id="' + esc(it.id) + '"><span class="box">' + (it.done ? '✓' : '') + '</span><span style="flex:1">' + esc(it.name) + '</span>' +
+      (it.rep != null ? '<span class="reptag">↻ ' + JOURS[it.rep].toLowerCase() + '</span><button class="x" type="button" data-delt="' + esc(it.id) + '" aria-label="Supprimer">×</button>' : '') + '</div>';
   }
   return h;
 }
@@ -258,7 +296,10 @@ function openSheet(kind){
     });
   } else if(kind === 'courses' || kind === 'taches'){
     t = kind === 'courses' ? 'Courses' : 'Maison'; cls = 'rem ' + (kind === 'courses' ? 'or' : 'bl');
-    h = '<div class="list big-list">' + rowsHtml(kind) + '</div><form class="sadd" data-col="' + kind + '"><input placeholder="Ajouter…" autocomplete="off"><button class="main" type="submit">Ajouter</button></form>' +
+    h = '<div class="list big-list">' + rowsHtml(kind) + '</div><form class="sadd" data-col="' + kind + '"><input placeholder="Ajouter…" autocomplete="off">' +
+        (kind === 'taches' ? '<select id="srep"><option value="">Une fois</option>' + [1,2,3,4,5,6,0].map(function(d){ return '<option value="' + d + '">Chaque ' + JOURS[d].toLowerCase() + '</option>'; }).join('') + '</select>' : '') +
+        '<button class="main" type="submit">Ajouter</button></form>' +
+        (kind === 'taches' ? '<div class="sub" style="margin-top:8px">Une tâche « chaque mardi » n’apparaît sur l’écran que le mardi, et revient toute seule la semaine suivante.</div>' : '') +
         '<div style="text-align:right;margin-top:12px"><button class="link" type="button" data-clear2="' + kind + '">Retirer ' + (kind === 'courses' ? 'les cochés' : 'les faites') + '</button></div>';
   } else if(kind === 'plat'){
     var p = (jour && jour.plat) || {};
@@ -281,11 +322,13 @@ function openSheet(kind){
   var f = document.querySelector('#sheetbody form.sadd');
   if(f) f.addEventListener('submit', function(e){
     e.preventDefault(); var inp = f.querySelector('input'), v = inp.value.trim(); if(!v) return; inp.value = '';
-    root.child(kind).push({name: v.slice(0, 80), done: false, at: Date.now()}).catch(function(){ status('Ajout impossible'); });
+    var data = {name: v.slice(0, 80), done: false, at: Date.now()}, sel = $('srep');
+    if(sel && sel.value !== '') data.rep = parseInt(sel.value, 10);
+    root.child(kind).push(data).catch(function(){ status('Ajout impossible'); });
   });
   var c2 = document.querySelector('[data-clear2]');
   if(c2) c2.addEventListener('click', function(){
-    var up = {}; lists[kind].forEach(function(x){ if(x.done) up[x.id] = null; }); root.child(kind).update(up);
+    var up = {}; lists[kind].forEach(function(x){ if(x.done && x.rep == null) up[x.id] = null; }); root.child(kind).update(up);
   });
   if(kind === 'mot') $('mot2ok').addEventListener('click', function(){ $('mot').value = $('mot2').value; saveMot(); closeSheet(); });
 }
@@ -301,6 +344,10 @@ function bindSheets(){
     });
   });
   $('sheetclose').addEventListener('click', closeSheet);
+  $('sheetbody').addEventListener('click', function(e){
+    var id = e.target.getAttribute && e.target.getAttribute('data-delt');
+    if(id){ e.stopPropagation(); root.child('taches/' + id).remove(); }
+  });
   $('sheet').addEventListener('click', function(e){ if(e.target === $('sheet')) closeSheet(); });
 }
 
@@ -308,11 +355,12 @@ function bindSheets(){
 function bind(){
   document.addEventListener('click', function(e){
     var t = e.target, row = null;
+    if(t.getAttribute && t.getAttribute('data-delt')) return;
     while(t && t !== document){ if(t.getAttribute && t.getAttribute('data-id')){ row = t; break; } t = t.parentNode; }
     if(!row) return;
     var name = row.getAttribute('data-col'), id = row.getAttribute('data-id'), it = null;
     for(var i = 0; i < lists[name].length; i++) if(lists[name][i].id === id) it = lists[name][i];
-    if(it) root.child(name + '/' + id + '/done').set(!it.done).catch(function(){ status('Modification impossible'); });
+    if(it) root.child(name + '/' + id).update({done: !it.done, doneAt: Date.now()}).catch(function(){ status('Modification impossible'); });
   });
   var forms = document.querySelectorAll('form.add');
   for(var fi = 0; fi < forms.length; fi++){
@@ -331,7 +379,7 @@ function bind(){
     (function(b){
       b.addEventListener('click', function(){
         var name = b.getAttribute('data-clear'), up = {};
-        lists[name].forEach(function(x){ if(x.done) up[x.id] = null; });
+        lists[name].forEach(function(x){ if(x.done && x.rep == null) up[x.id] = null; });
         root.child(name).update(up).catch(function(){ status('Suppression impossible'); });
       });
     })(clears[ci]);
@@ -352,7 +400,7 @@ function start(code){
     store(KEY, code);
     show('login', false); show('app', true);
     config = s.val();
-    tick(); setInterval(tick, 15000);
+    tick(); setInterval(tick, 5000);
     bind();
     watchList('courses'); watchList('taches');
     watchMot(); watchDates(); bindTimer(); bindSheets();
@@ -361,7 +409,7 @@ function start(code){
     setInterval(loadJour, 30 * 60000);
     setInterval(loadMeteo, 30 * 60000);
     var lastDay = new Date().getDate();
-    setInterval(function(){ if(new Date().getDate() !== lastDay){ lastDay = new Date().getDate(); loadJour(); renderDates(); loadMeteo(); } }, 60000);
+    setInterval(function(){ if(new Date().getDate() !== lastDay){ lastDay = new Date().getDate(); loadJour(); renderDates(); loadMeteo(); resetRecurring('taches'); renderList('taches'); } }, 60000);
   }, function(){
     store(KEY, null); root = null;
     show('app', false); show('login', true);
