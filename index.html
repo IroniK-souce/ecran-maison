@@ -70,7 +70,9 @@ button.main{background:#007aff;color:#fff}
 .sect{color:#fff;font-size:22px;font-weight:700;margin:22px 9px 4px;text-shadow:0 1px 10px rgba(0,0,0,.15)}
 .fc{display:flex;margin-top:6px}
 .fd{flex:1;text-align:center;font-size:14px;font-weight:600}
-.fd .i{font-size:26px;margin:6px 0}
+.fd .i{font-size:26px;margin:8px 0}
+.w.wx2{display:flex;flex-direction:column;justify-content:space-between}
+.wx2 .fc{margin-top:14px}
 .fd .lo{color:rgba(255,255,255,.7);font-weight:500}
 .sun{font-size:13px;margin-top:10px;opacity:.9}
 .note textarea{width:100%;min-height:110px;font-family:inherit;font-size:20px;line-height:1.35;border:0;background:transparent;resize:none;color:#3a3000;outline:none;padding:0;-webkit-appearance:none}
@@ -121,14 +123,10 @@ button.main{background:#007aff;color:#fff}
       <div class="sub" id="agup" style="font-size:11px;margin-top:4px"></div>
     </div></div>
 
-    <div class="c2"><div class="w plat">
-      <div class="thumb" id="pimg">🍲</div>
-      <div class="pinfo">
-        <div class="kick">Ce soir</div>
-        <div class="pn" id="pn">En attente de la suggestion du jour</div>
-        <div class="sub" id="pd" style="margin-top:6px"></div>
-        <a class="btn" id="purl" href="#" target="_blank" rel="noopener" style="display:none">Voir la recette</a>
-      </div>
+    <div class="c2"><div class="w wx2">
+      <div class="wt" style="color:#fff"><span>Cette semaine</span><span id="wcity2" style="text-transform:none;font-weight:500;opacity:.85"></span></div>
+      <div class="fc" id="fc"><div class="fd">–</div></div>
+      <div class="sun" id="sun"></div>
     </div></div>
 
     <div class="c1"><div class="w rem or">
@@ -159,10 +157,14 @@ button.main{background:#007aff;color:#fff}
       <div class="pr"><button type="button" data-min="5">5 min</button><button type="button" data-min="10">10</button><button type="button" data-min="20">20</button><button type="button" data-min="45">45</button><button type="button" id="tmstop">Stop</button></div>
     </div></div>
 
-    <div class="c3" style="width:75%;padding:9px"><div class="w wx2">
-      <div class="wt" style="color:#fff"><span>Prochains jours</span><span id="wcity2" style="text-transform:none;font-weight:500;opacity:.85"></span></div>
-      <div class="fc" id="fc"><div class="fd">–</div></div>
-      <div class="sun" id="sun"></div>
+    <div class="c3" style="width:75%;padding:9px"><div class="w plat">
+      <div class="thumb" id="pimg">🍲</div>
+      <div class="pinfo">
+        <div class="kick">Ce soir</div>
+        <div class="pn" id="pn">En attente de la suggestion du jour</div>
+        <div class="sub" id="pd" style="margin-top:6px"></div>
+        <a class="btn" id="purl" href="#" target="_blank" rel="noopener" style="display:none">Voir la recette</a>
+      </div>
     </div></div>
 
     <div class="c3" style="width:100%;padding:9px"><div class="w cd">

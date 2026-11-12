@@ -102,7 +102,7 @@ function loadMeteo(){
       .then(function(r){ return r.json(); })
       .then(function(d){ if(!d.results || !d.results.length) throw new Error('ville'); geo = {ville: ville, lat: d.results[0].latitude, lon: d.results[0].longitude}; return geo; });
   p.then(function(g){
-    return fetch('https://api.open-meteo.com/v1/forecast?timezone=Europe%2FParis&forecast_days=5&latitude=' + g.lat + '&longitude=' + g.lon +
+    return fetch('https://api.open-meteo.com/v1/forecast?timezone=Europe%2FParis&forecast_days=7&latitude=' + g.lat + '&longitude=' + g.lon +
       '&current=temperature_2m,weather_code&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset');
   }).then(function(r){ return r.json(); }).then(function(m){
     var t = Math.round(m.current.temperature_2m), code = m.current.weather_code;
@@ -115,7 +115,7 @@ function loadMeteo(){
     $('ms').textContent = resume;
     $('mc').textContent = pluie !== null ? 'Prends un parapluie' : (t <= 5 ? 'Couvre-toi bien' : '');
     var fh = '', dd = m.daily;
-    for(var k = 0; k < dd.time.length && k < 5; k++){
+    for(var k = 0; k < dd.time.length && k < 7; k++){
       var dt = new Date(dd.time[k] + 'T12:00:00');
       fh += '<div class="fd"><div>' + (k === 0 ? 'Auj.' : JOURS[dt.getDay()].slice(0, 3) + '.') + '</div><div class="i">' + icon(dd.weather_code[k], true) + '</div><div>' + Math.round(dd.temperature_2m_max[k]) + '°</div><div class="lo">' + Math.round(dd.temperature_2m_min[k]) + '°</div></div>';
     }
