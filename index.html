@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Maison">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<title>Maison</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,Helvetica,Arial,sans-serif;background:#efede6;color:#1f1f1d;-webkit-text-size-adjust:100%}
+.wrap{max-width:1100px;margin:0 auto;padding:18px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px}
+.clk{font-size:64px;font-weight:600;line-height:1;letter-spacing:-1px}
+.date{font-size:18px;color:#6b6a65;margin-top:6px}
+.met{text-align:right}
+.met .t{font-size:34px;font-weight:600}
+.met .s{font-size:15px;color:#6b6a65;margin-top:2px}
+.met .cs{font-size:15px;color:#9a5b00;margin-top:2px}
+.grid{display:flex;flex-wrap:wrap;margin:0 -6px}
+.cell{width:50%;padding:6px}
+.full{width:100%;padding:6px}
+.card{background:#fff;border-radius:14px;padding:14px 16px;border:1px solid #e3e0d7;height:100%}
+.h{font-size:14px;color:#6b6a65;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
+.row{display:flex;align-items:center;padding:7px 0;font-size:18px;border-bottom:1px solid #f1efe9;cursor:pointer}
+.row:last-child{border-bottom:0}
+.box{width:24px;height:24px;border:2px solid #a3a19a;border-radius:6px;margin-right:12px;flex-shrink:0;text-align:center;line-height:20px;font-size:15px;color:#fff}
+.row.done{color:#aaa;text-decoration:line-through}
+.row.done .box{background:#2e7d32;border-color:#2e7d32}
+.when{color:#1f5fa6;min-width:62px;font-size:16px;margin-right:6px}
+.when.dem{color:#9a9890}
+.empty{color:#9a9890;font-size:15px;padding:6px 0}
+form.add{display:flex;margin-top:10px}
+input{font-size:16px;padding:9px 11px;border:1px solid #d0cdc4;border-radius:9px;background:#fbfaf7;-webkit-appearance:none;min-width:0}
+form.add input{flex:1;margin-right:6px}
+button,.btn{font-size:15px;padding:9px 13px;border:1px solid #c9c6bd;border-radius:9px;background:#fff;color:#1f1f1d;-webkit-appearance:none;text-decoration:none;display:inline-block;cursor:pointer}
+button.main{background:#1f1f1d;color:#fff;border-color:#1f1f1d}
+.link{background:none;border:0;color:#6b6a65;font-size:13px;padding:0;text-decoration:underline}
+.big{font-size:32px;font-weight:600}
+.sub{font-size:14px;color:#6b6a65}
+.bar{height:8px;background:#ebe8e0;border-radius:4px;margin-top:10px;overflow:hidden}
+.bar div{height:8px;background:#1f5fa6;border-radius:4px}
+.bar div.over{background:#b3261e}
+.plat{display:flex;align-items:center}
+.thumb{width:92px;height:92px;border-radius:12px;background:#f6e7c8;flex-shrink:0;margin-right:16px;overflow:hidden;text-align:center;line-height:92px;font-size:38px}
+.thumb img{width:92px;height:92px;object-fit:cover;display:block}
+.pn{font-size:21px;font-weight:600;line-height:1.25}
+.inl{margin-top:10px}
+.inl input{width:120px;margin-right:6px}
+.st{font-size:12px;color:#9a9890;text-align:center;margin-top:10px}
+.set{background:#fff;border-radius:14px;padding:14px 16px;border:1px solid #e3e0d7;margin:6px}
+.set label{display:block;font-size:14px;color:#6b6a65;margin:10px 0 4px}
+.set input{width:100%}
+.hide{display:none}
+#login{max-width:420px;margin:80px auto;background:#fff;border-radius:14px;padding:24px;border:1px solid #e3e0d7;text-align:center}
+#login input{width:100%;margin:14px 0;text-align:center}
+@media (max-width:700px){.cell{width:100%}.clk{font-size:48px}.met .t{font-size:26px}}
+</style>
+</head>
+<body>
+<div id="login" class="hide">
+  <div class="big" style="font-size:26px">Maison</div>
+  <div class="sub" style="margin-top:6px">Entre le code d'accès du foyer</div>
+  <form id="lf"><input id="lc" autocomplete="off" autocapitalize="none" autocorrect="off" placeholder="maison-…"><button class="main" type="submit">Valider</button></form>
+  <div class="sub" id="lmsg" style="margin-top:10px"></div>
+</div>
+
+<div class="wrap hide" id="app">
+  <div class="top">
+    <div><div class="clk" id="clk">--:--</div><div class="date" id="date"></div></div>
+    <div class="met"><div class="t" id="mt">–</div><div class="s" id="ms"></div><div class="cs" id="mc"></div></div>
+  </div>
+
+  <div class="grid">
+    <div class="cell"><div class="card">
+      <p class="h"><span>Agenda</span><span id="agup" style="font-size:12px"></span></p>
+      <div id="agenda"><div class="empty">Chargement…</div></div>
+    </div></div>
+
+    <div class="cell"><div class="card">
+      <p class="h"><span>Courses</span><button class="link" type="button" data-clear="courses">Retirer les cochés</button></p>
+      <div id="l-courses"><div class="empty">Chargement…</div></div>
+      <form class="add" data-col="courses"><input placeholder="Ajouter un article" autocomplete="off"><button type="submit">Ajouter</button></form>
+    </div></div>
+
+    <div class="cell"><div class="card">
+      <p class="h"><span>Maison</span><button class="link" type="button" data-clear="taches">Retirer les faites</button></p>
+      <div id="l-taches"><div class="empty">Chargement…</div></div>
+      <form class="add" data-col="taches"><input placeholder="Ajouter une tâche" autocomplete="off"><button type="submit">Ajouter</button></form>
+    </div></div>
+
+    <div class="cell"><div class="card">
+      <p class="h"><span id="bt">Budget du mois</span><button class="link" type="button" id="bset">Modifier</button></p>
+      <div class="big" id="brest">–</div>
+      <div class="sub" id="bsub"></div>
+      <div class="bar"><div id="bbar" style="width:0"></div></div>
+      <form id="bdep" class="inl"><input id="bdepv" inputmode="decimal" placeholder="Montant €"><button type="submit">+ Dépense</button></form>
+      <form id="btot" class="inl hide"><input id="btotv" inputmode="decimal" placeholder="Budget €"><button type="submit">Enregistrer</button></form>
+    </div></div>
+
+    <div class="full"><div class="card">
+      <div class="plat">
+        <div class="thumb" id="pimg">🍽</div>
+        <div style="flex:1;min-width:0">
+          <div class="sub">Ce soir, on mange</div>
+          <div class="pn" id="pn">En attente de la suggestion du jour</div>
+          <div class="sub" id="pd" style="margin-top:4px"></div>
+        </div>
+        <a class="btn" id="purl" href="#" target="_blank" rel="noopener" style="display:none;margin-left:10px">Voir la recette</a>
+      </div>
+    </div></div>
+  </div>
+
+  <div id="settings" class="set hide">
+    <p class="h" style="margin:0"><span>Réglages</span></p>
+    <label for="cv">Ville pour la météo</label>
+    <input id="cv" placeholder="Pau">
+    <div style="margin-top:12px"><button class="main" id="csave" type="button">Enregistrer</button> <button id="cclose" type="button">Fermer</button> <span id="cmsg" class="sub"></span></div>
+  </div>
+
+  <div class="st"><span id="st">Connexion…</span> · <button class="link" type="button" id="sopen">Réglages</button></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
