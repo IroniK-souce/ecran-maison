@@ -104,8 +104,11 @@ function applyTheme(d){
 function grand(){ return load('ecran-grand') === '1'; }
 function applyGrand(){ cls(document.body, 'grand', grand()); }
 function tod(h){ return h >= 5 && h < 11 ? 'matin' : h >= 11 && h < 18 ? 'jour' : h >= 18 && h < 23 ? 'soir' : 'nuit'; }
+var lastMin = -1;
 function tick(){
   var d = new Date(), t = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  if(d.getMinutes() !== lastMin && lastMin !== -1) safe(renderInfos);
+  lastMin = d.getMinutes();
   nightCheck(d);
   $$('.clk').forEach(function(el){ el.textContent = t; });
   $('nclk').textContent = t;
@@ -444,6 +447,32 @@ function renderEvents(){
   if(!rows.length){ $('h-events').innerHTML = '<div class="empty">' + (jour && jour.agenda_relie ? 'Rien aujourd\'hui ni demain' : 'Agenda pas encore relié') + '</div>'; return; }
   fitList($('h-events'), rows, function(k){ return '<div class="more" style="padding-left:0">+ ' + k + ' autre' + (k > 1 ? 's' : '') + ' ›</div>'; }, 4);
 }
+/* plannings de travail (calendriers iCloud, data.json) */
+function fmtH(h){ if(!h) return ''; var p = h.split(':'); return parseInt(p[0], 10) + ' h' + (p[1] && p[1] !== '00' ? ' ' + p[1] : ''); }
+function plage(x){ return fmtH(x.debut) + (x.fin ? '–' + fmtH(x.fin) : ''); }
+function planningPill(){
+  var pl = (jour && jour.planning) || [], now = new Date(), tk = todayKey(now), tmk = todayKey(addDays(now, 1)), hm0 = pad(now.getHours()) + ':' + pad(now.getMinutes()), byNom = {}, out = [];
+  pl.forEach(function(x){ var k = (x.qui ? x.qui + ' · ' : '') + x.nom; (byNom[k] = byNom[k] || []).push(x); });
+  for(var k in byNom){
+    var l = byNom[k], cur = null, reste = l.filter(function(x){ return x.date === tk && (x.fin || '24:00') > hm0; });
+    reste.forEach(function(x){ if(x.debut <= hm0) cur = x; });
+    if(cur) out.push('<div class="info work" data-act="sheet" data-k="agenda"><b>💼 ' + esc(k) + '</b>en ce moment, jusqu\'à ' + fmtH(cur.fin) + (reste.length > 1 ? ' · puis ' + reste.slice(1).map(plage).join(', ') : '') + '</div>');
+    else if(reste.length) out.push('<div class="info work" data-act="sheet" data-k="agenda"><b>💼 ' + esc(k) + ' aujourd\'hui</b>' + reste.map(plage).join(', ') + '</div>');
+    else { var dem = l.filter(function(x){ return x.date === tmk; }); out.push('<div class="info work" data-act="sheet" data-k="agenda"><b>💼 ' + esc(k) + ' demain</b>' + (dem.length ? dem.map(plage).join(', ') : 'repos') + '</div>'); }
+  }
+  return out;
+}
+function planningSheet(){
+  var pl = (jour && jour.planning) || [];
+  if(!pl.length) return '';
+  var h = '<div class="shead">Planning de travail · 7 jours</div>', now = new Date();
+  for(var i = 0; i < 7; i++){
+    var d = todayKey(addDays(now, i)), by = {}, keys = [];
+    pl.forEach(function(x){ if(x.date !== d) return; var k = (x.qui ? x.qui + ' · ' : '') + x.nom; if(!by[k]){ by[k] = []; keys.push(k); } by[k].push(plage(x)); });
+    h += '<div class="arow"><span class="ah" style="color:var(--bl);min-width:130px">' + dayLabel(d, true) + '</span>' + (keys.length ? keys.map(function(k){ return esc(k) + ' <span style="font-weight:500">' + by[k].join(', ') + '</span>'; }).join(' · ') : '<span class="sub">Repos</span>') + '</div>';
+  }
+  return h;
+}
 var infoState = {gel: '', alertes: [], vigi: null, offline: false};
 function renderVigi(){
   var v = (jour && jour.vigilance) || {}, n = v.niveau;
@@ -463,6 +492,7 @@ function renderInfos(){
   if(infoState.offline) p.push('<div class="info alert"><b>Hors ligne</b> vos modifications partiront au retour du réseau</div>');
   var v = infoState.vigi;
   if(v) p.push('<a class="info ' + (v.n === 'jaune' ? 'warn' : 'alert') + '" href="' + esc(v.url) + '" target="_blank" rel="noopener"><b>⚠︎ Vigilance ' + v.n + '</b>' + esc(v.txt) + (v.fin ? ' · jusqu\'à ' + esc(v.fin) : '') + '</a>');
+  planningPill().forEach(function(x){ p.push(x); });
   if(infoState.gel) p.push('<div class="info cold" data-act="page" data-p="infos">' + infoState.gel + '</div>');
   infoState.alertes.forEach(function(a){ p.push('<div class="info warn" data-act="page" data-p="infos">' + a + '</div>'); });
   if(tmEnd || tmRing) p.push('<div class="info warn" data-act="sheet" data-k="minuteur"><b>⏱ Minuteur</b>' + (tmRing ? 'terminé, touchez pour arrêter' : '<span class="tmv0">' + tmLeft() + '</span>') + '</div>');
@@ -821,6 +851,7 @@ function openSheet(kind, opt){
       if(a.date !== last){ last = a.date; h += '<div class="shead">' + (a.date === tk ? "Aujourd'hui" : 'Demain') + '</div>'; }
       h += '<div class="arow"><span class="ah">' + esc(a.heure || 'Journée') + '</span>' + esc(a.titre) + '</div>';
     });
+    h += planningSheet();
     var dl = datesList();
     h += '<div class="shead">Dates à attendre</div>' + (dl.length ? dl.map(function(x){ return '<div class="arow"><span class="ah" style="color:var(--or)">' + (x.n === 0 ? '🎉' : 'J-' + x.n) + '</span>' + esc(x.titre) + '</div>'; }).join('') : '<div class="empty">Aucune</div>');
     h += '<div style="margin-top:16px"><button type="button" class="b" data-act="page" data-p="maison">Gérer les dates</button></div>';
