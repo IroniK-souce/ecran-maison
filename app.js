@@ -72,6 +72,7 @@ function touched(e){
   var wasAsleep = isSleeping();
   lastTouch = Date.now(); forced = false;
   if(wasAsleep){
+    try { loadMeteo(); } catch(err){}
     wakeUntil = Date.now() + 120000;
     nightCheck(new Date());
     if(e && e.type !== 'keydown'){ e.preventDefault(); e.stopPropagation(); }
@@ -692,7 +693,7 @@ function start(code){
     root.child('config').on('value', function(s){ config = s.val(); loadMeteo(); renderWifi(); });
     loadJour();
     setInterval(loadJour, 30 * 60000);
-    setInterval(loadMeteo, 30 * 60000);
+    setInterval(loadMeteo, 10 * 60000);
     var lastDay = new Date().getDate();
     setInterval(function(){ if(new Date().getDate() !== lastDay){ lastDay = new Date().getDate(); loadJour(); renderDates(); loadMeteo(); resetRecurring('taches'); renderList('taches'); } }, 60000);
   }, function(){
