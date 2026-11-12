@@ -123,10 +123,12 @@ body.night .lock{margin-top:28vh;opacity:.4;text-shadow:none}
 body.night .clk{font-size:180px;font-weight:200;letter-spacing:-4px}
 body.night .date{font-size:26px}
 .vinfo{display:none}
-.vbtn{position:absolute;top:24px;right:28px;z-index:5;display:flex;align-items:center;font-size:17px;font-weight:600;color:#fff;padding:12px 20px 12px 16px;border-radius:26px;background:rgba(255,255,255,.22);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,.35);box-shadow:0 6px 20px rgba(20,20,60,.18)}
+.tbtns{position:absolute;top:24px;right:28px;z-index:5;display:flex}
+.tbtns .vbtn+.vbtn{margin-left:10px}
+.vbtn{display:flex;align-items:center;font-size:17px;font-weight:600;color:#fff;padding:12px 20px 12px 16px;border-radius:26px;background:rgba(255,255,255,.22);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,.35);box-shadow:0 6px 20px rgba(20,20,60,.18)}
 .vbtn .vm{font-size:22px;margin-right:8px;line-height:1}
 .vbtn:active{-webkit-transform:scale(.95);transform:scale(.95)}
-body.night .vbtn{display:none}
+body.night .tbtns{display:none}
 body.night .vinfo{display:block;font-size:30px;margin-top:18px;line-height:1.5}
 body.night .vinfo span{font-size:20px;opacity:.85}
 #lockbox{-webkit-transition:-webkit-transform 2s;transition:transform 2s}
@@ -210,7 +212,7 @@ body.night .gel{display:none !important}
 </div>
 
 <div class="wrap hide" id="app">
-  <button type="button" id="vopen" class="vbtn" aria-label="Mettre en veille"><span class="vm">☾</span>Veille</button>
+  <div class="tbtns"><button type="button" id="wopen" class="vbtn" aria-label="Wi-Fi invités"><span class="vm">📶</span>Wi-Fi</button><button type="button" id="vopen" class="vbtn" aria-label="Mettre en veille"><span class="vm">☾</span>Veille</button></div>
   <div class="lock"><div id="lockbox"><div class="date" id="date"></div><div class="clk" id="clk">--:--</div><div class="vinfo" id="vinfo"></div></div></div>
 
   <div id="gel" class="gel hide"></div>
@@ -289,12 +291,8 @@ body.night .gel{display:none !important}
     </div></div>
 
 
-    <div class="c1"><div class="w wifi">
-      <div class="wt"><span>📶 Wi-Fi invités</span></div>
-      <div id="wifiw"><div class="empty">Ajoute ton Wi-Fi dans Réglages</div></div>
-    </div></div>
 
-    <div class="c2"><div class="w cd">
+    <div class="c3" style="width:75%;padding:9px"><div class="w cd">
       <div class="wt"><span>À venir</span></div>
       <div id="dates"><div class="empty">Chargement…</div></div>
       <form id="df"><input id="dt" placeholder="Vacances, anniversaire…" style="flex:2"><input id="dd" type="date" style="flex:1"><button type="submit">+</button></form>
@@ -320,7 +318,7 @@ body.night .gel{display:none !important}
     <div style="margin-top:16px"> <button id="cclose" type="button">Fermer</button> <span id="cmsg" class="sub"></span></div>
   </div>
 
-  <div class="st"><span id="st">Connexion…</span> · <span id="ver">version 12/11 14:54</span> · <button class="link" type="button" id="sopen">Réglages</button></div>
+  <div class="st"><span id="st">Connexion…</span> · <span id="ver">version 12/11 14:58</span> · <button class="link" type="button" id="sopen">Réglages</button></div>
 </div>
 
 <div id="sheet" class="hide"><div class="panel" id="sheetpanel"><div class="shtop"><h2 id="sheettitle"></h2><button type="button" id="sheetclose" aria-label="Fermer">✕</button></div><div id="sheetbody"></div></div></div>
@@ -328,6 +326,6 @@ body.night .gel{display:none !important}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="app.js?v=1794491649"></script>
+<script src="app.js?v=1794491890"></script>
 </body>
 </html>

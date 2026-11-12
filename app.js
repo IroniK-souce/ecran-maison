@@ -336,6 +336,7 @@ function wifiQr(w, cell){
   return q.createSvgTag(cell || 4, 0);
 }
 function renderWifi(){
+  if(!$('wifiw')) return;
   var w = config && config.wifi;
   if(!w || !w.ssid){ $('wifiw').innerHTML = '<div class="empty">Ajoute ton Wi-Fi dans Réglages, en bas de la page</div>'; return; }
   var svg = wifiQr(w, 4);
@@ -623,6 +624,7 @@ function bind(){
     var wf = (config && config.wifi) || {}; $('wssid').value = wf.ssid || ''; $('wpass').value = wf.pass || ''; $('wtype').value = wf.type || 'WPA';
     var c = veilleCfg(); $('vdelay').value = String(c.delay); $('vnuit').value = c.nuit ? '1' : '0'; $('vdeb').value = String(c.debut); $('vfin').value = String(c.fin);
   });
+  $('wopen').addEventListener('click', function(e){ e.stopPropagation(); openSheet('wifi'); });
   $('vopen').addEventListener('click', function(e){ e.stopPropagation(); setTimeout(goVeille, 50); });
   var saveV = function(){
     var c = {delay: parseInt($('vdelay').value, 10), nuit: $('vnuit').value === '1', debut: parseInt($('vdeb').value, 10), fin: parseInt($('vfin').value, 10)};
