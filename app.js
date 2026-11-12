@@ -509,6 +509,8 @@ function calendarHtml(opt){
 function renderPlanningPage(){
   var el = $('pl-cal'), pl = (jour && jour.planning) || [], tot = 0, n = 0, now = new Date(), tk = todayKey(now);
   pl.forEach(function(x){ if(x.debut && x.fin){ var d = hmin(x.fin) - hmin(x.debut); if(d > 0){ tot += d; n++; } } });
+  var qui = []; pl.forEach(function(x){ if(x.qui && qui.indexOf(x.qui) < 0) qui.push(x.qui); });
+  $('pl-title').textContent = 'Planning' + (qui.length ? ' de ' + qui.join(' et ') : '');
   $('pl-sum').textContent = pl.length ? n + ' service' + (n > 1 ? 's' : '') + ' sur 7 jours · ' + Math.floor(tot / 60) + ' h' + (tot % 60 ? ' ' + pad(tot % 60) : '') + ' de travail' : 'Services de travail des 7 prochains jours';
   var nxt = null, hm0 = pad(now.getHours()) + ':' + pad(now.getMinutes());
   pl.forEach(function(x){ if(!nxt && (x.date > tk || (x.date === tk && (x.fin || '24:00') > hm0))) nxt = x; });
