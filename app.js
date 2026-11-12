@@ -60,6 +60,7 @@ var IC = {
   save: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/>',
   x: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
   chev: '<path d="M9.5 5.5l6.5 6.5-6.5 6.5"/>',
+  work: '<rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><path d="M9 7.5V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5v2M3.5 12.5h17"/>',
   book: '<path d="M5 4.5h11a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3z"/><path d="M5 16.5a3 3 0 0 1 3-3h11"/>'
 };
 function ico(n){ return '<svg class="svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (IC[n] || '') + '</svg>'; }
@@ -107,7 +108,7 @@ function tod(h){ return h >= 5 && h < 11 ? 'matin' : h >= 11 && h < 18 ? 'jour' 
 var lastMin = -1;
 function tick(){
   var d = new Date(), t = pad(d.getHours()) + ':' + pad(d.getMinutes());
-  if(d.getMinutes() !== lastMin && lastMin !== -1) safe(renderInfos);
+  if(d.getMinutes() !== lastMin && lastMin !== -1){ safe(renderInfos); if(curPage === 'planning') safe(renderPlanningPage); }
   lastMin = d.getMinutes();
   nightCheck(d);
   $$('.clk').forEach(function(el){ el.textContent = t; });
@@ -173,7 +174,7 @@ document.addEventListener('keydown', touched, true);
 function goVeille(){ forced = true; if(sheetKind) closeSheet(); goPage('accueil'); nightCheck(new Date()); }
 
 /* ---------- pages ---------- */
-var PAGES = ['accueil', 'cuisine', 'maison', 'infos', 'reglages'], curPage = 'accueil';
+var PAGES = ['accueil', 'cuisine', 'maison', 'planning', 'infos', 'reglages'], curPage = 'accueil';
 function goPage(p){
   if(PAGES.indexOf(p) < 0) p = 'accueil';
   curPage = p;
@@ -181,6 +182,7 @@ function goPage(p){
   $$('.rbtn').forEach(function(b){ cls(b, 'on', b.getAttribute('data-p') === p); });
   if(p === 'reglages') fillSettings();
   if(p === 'infos') safe(renderMeteoDetail);
+  if(p === 'planning') safe(renderPlanningPage);
   if(window.innerWidth < 900) window.scrollTo(0, 0);
 }
 /* balayage gauche / droite entre les pages */
@@ -465,7 +467,8 @@ function planningPill(){
 }
 /* vue calendrier : 7 jours, un bloc par service ou rendez-vous */
 function hmin(h){ var p = String(h || '').split(':'); return parseInt(p[0], 10) * 60 + (parseInt(p[1], 10) || 0); }
-function calendarHtml(){
+function calendarHtml(opt){
+  opt = opt || {};
   var now = new Date(), days = [], blocks = {}, allday = {}, lo = 24 * 60, hi = 0, any = false;
   for(var i = 0; i < 7; i++){ var dk = todayKey(addDays(now, i)); days.push(dk); blocks[dk] = []; allday[dk] = []; }
   ((jour && jour.planning) || []).forEach(function(x){
@@ -473,18 +476,18 @@ function calendarHtml(){
     var a = hmin(x.debut), b = x.fin ? hmin(x.fin) : a + 60; if(b <= a) b = 24 * 60;
     blocks[x.date].push({a: a, b: b, k: 'work', t: (x.qui ? x.qui + ' · ' : '') + x.nom, h: hc(x.debut) + (x.fin ? '–' + hc(x.fin) : '')}); any = true;
   });
-  ((jour && jour.agenda) || []).forEach(function(x){
+  if(!opt.travail) ((jour && jour.agenda) || []).forEach(function(x){
     if(!blocks[x.date]) return;
     if(!x.heure){ allday[x.date].push(x.titre); any = true; return; }
     var a = hmin(x.heure), b = x.fin ? hmin(x.fin) : a + 60; if(b <= a) b = Math.min(24 * 60, a + 60);
     blocks[x.date].push({a: a, b: b, k: 'rdv', t: x.titre, h: hc(x.heure) + (x.fin ? '–' + hc(x.fin) : '')}); any = true;
   });
-  if(!any) return '<div class="empty">Rien de prévu ces 7 prochains jours.</div>';
+  if(!any) return '<div class="empty">' + (opt.travail ? 'Aucun service ces 7 prochains jours.' : 'Rien de prévu ces 7 prochains jours.') + '</div>';
   days.forEach(function(d){ blocks[d].forEach(function(x){ lo = Math.min(lo, x.a); hi = Math.max(hi, x.b); }); });
   if(hi === 0){ lo = 9 * 60; hi = 18 * 60; }
   lo = Math.floor(lo / 60) * 60; hi = Math.ceil(hi / 60) * 60;
   if(hi - lo < 6 * 60) hi = Math.min(24 * 60, lo + 6 * 60);
-  var H = Math.max(300, Math.min(window.innerHeight - 300, 520)), px = H / (hi - lo), hasAll = days.some(function(d){ return allday[d].length; });
+  var H = opt.h || Math.max(300, Math.min(window.innerHeight - 300, 520)), px = H / (hi - lo), hasAll = days.some(function(d){ return allday[d].length; });
   var h = '<div class="calw"><div class="cal"><div class="cal-t"><div class="cal-h"></div>' + (hasAll ? '<div class="cal-a"></div>' : '') + '<div class="cal-g" style="height:' + H + 'px">';
   for(var m = lo; m <= hi; m += 60) h += '<div style="top:' + Math.round((m - lo) * px - 9) + 'px">' + (m / 60 % 24) + ' h</div>';
   h += '</div></div>';
@@ -501,7 +504,17 @@ function calendarHtml(){
     if(d === tk && nowM >= lo && nowM <= hi) h += '<div class="cal-now" style="top:' + ((nowM - lo) * px).toFixed(1) + 'px"></div>';
     h += '</div></div>';
   });
-  return h + '</div></div><div class="sub" style="margin-top:10px"><span class="lg work"></span>Planning de travail &nbsp; <span class="lg rdv"></span>Rendez-vous Antho&amp;Lisa</div>';
+  return h + '</div></div>' + (opt.travail ? '' : '<div class="sub" style="margin-top:10px"><span class="lg work"></span>Planning de travail &nbsp; <span class="lg rdv"></span>Rendez-vous Antho&amp;Lisa</div>');
+}
+function renderPlanningPage(){
+  var el = $('pl-cal'), pl = (jour && jour.planning) || [], tot = 0, n = 0, now = new Date(), tk = todayKey(now);
+  pl.forEach(function(x){ if(x.debut && x.fin){ var d = hmin(x.fin) - hmin(x.debut); if(d > 0){ tot += d; n++; } } });
+  $('pl-sum').textContent = pl.length ? n + ' service' + (n > 1 ? 's' : '') + ' sur 7 jours · ' + Math.floor(tot / 60) + ' h' + (tot % 60 ? ' ' + pad(tot % 60) : '') + ' de travail' : 'Services de travail des 7 prochains jours';
+  var nxt = null, hm0 = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  pl.forEach(function(x){ if(!nxt && (x.date > tk || (x.date === tk && (x.fin || '24:00') > hm0))) nxt = x; });
+  $('pl-next').innerHTML = nxt ? (nxt.date === tk && nxt.debut <= hm0 ? 'En ce moment · jusqu\'à ' + fmtH(nxt.fin) : 'Prochain service : <b>' + (nxt.date === tk ? "aujourd'hui" : dayLabel(nxt.date, true).toLowerCase()) + ' ' + plage(nxt) + '</b>') : '';
+  var h = Math.max(260, el.clientHeight - 70);
+  el.innerHTML = calendarHtml({travail: true, h: window.innerWidth >= 900 ? h : 460});
 }
 var infoState = {gel: '', alertes: [], vigi: null, offline: false};
 function renderVigi(){
@@ -511,7 +524,7 @@ function renderVigi(){
 }
 function loadJour(){
   fetch('data.json?t=' + Date.now()).then(function(r){ return r.json(); }).then(function(d){
-    jour = d; safe(renderPlat); safe(renderMenu); safe(renderEvents); safe(renderVigi);
+    jour = d; if(curPage === 'planning') safe(renderPlanningPage); safe(renderPlat); safe(renderMenu); safe(renderEvents); safe(renderVigi);
     if(sheetKind === 'plat' || sheetKind === 'agenda') openSheet(sheetKind);
   }).catch(function(){ status('Données du jour indisponibles'); });
 }
