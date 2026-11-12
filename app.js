@@ -83,12 +83,88 @@ document.addEventListener('mousedown', touched, true);
 document.addEventListener('keydown', touched, true);
 function goVeille(){ forced = true; if(sheetKind) closeSheet(); window.scrollTo(0, 0); nightCheck(new Date()); }
 
+/* ---------- rayons, articles fréquents, favoris ---------- */
+function normTxt(t){ t = String(t || '').toLowerCase(); if(t.normalize) t = t.normalize('NFD').replace(/[̀-ͯ]/g, ''); return t.replace(/œ/g, 'oe').replace(/æ/g, 'ae').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+var RAYONS = ['Fruits et légumes', 'Boucherie et poisson', 'Crèmerie et œufs', 'Boulangerie', 'Épicerie', 'Boissons', 'Surgelés', 'Hygiène et maison', 'Autres'];
+var RAYON_KW = {
+  'Fruits et légumes': ['pomme','poire','banane','orange','citron','clementine','mandarine','raisin','kiwi','fraise','framboise','ananas','mangue','peche','abricot','prune','melon','pasteque','tomate','salade','laitue','mache','roquette','carotte','oignon','ail','echalote','poireau','courgette','aubergine','poivron','potimarron','potiron','courge','butternut','champignon','epinard','brocoli','chou','pomme de terre','pommes de terre','patate','celeri','navet','radis','concombre','avocat','persil','coriandre','basilic','ciboulette','menthe','thym','romarin','fenouil','haricots verts','legume','fruit','chataigne','betterave','endive','artichaut','asperge','gingembre','herbes fraiches'],
+  'Boucherie et poisson': ['poulet','boeuf','steak','hache','porc','jambon','lardon','saucisse','merguez','dinde','veau','agneau','canard','saumon','cabillaud','colin','lieu','crevette','moule','poisson','viande','chorizo','escalope','roti','cote','filet de','bacon','knack','pave'],
+  'Crèmerie et œufs': ['lait','beurre','creme','yaourt','yogourt','fromage','emmental','gruyere','parmesan','mozzarella','comte','chevre','raclette','camembert','feta','ricotta','mascarpone','oeuf','pate brisee','pate feuilletee','pate a pizza','rape','skyr','petit suisse'],
+  'Boulangerie': ['pain','baguette','brioche','croissant','pain de mie','biscotte','tortilla','wrap'],
+  'Épicerie': ['pates','pate de curry','spaghetti','coquillette','penne','riz','semoule','quinoa','farine','sucre','sel','poivre','huile','vinaigre','conserve','boite','haricots rouges','pois chiches','lentille','lait de coco','curry','epice','cumin','paprika','bouillon','sauce','moutarde','ketchup','mayonnaise','cafe','the','tisane','chocolat','biscuit','cereale','confiture','miel','tomates concassees','concentre','levure','maizena','herbes de provence','olive','noix','amande','compote','chips','gateau','puree','mais'],
+  'Boissons': ['eau','jus','soda','biere','vin','coca','sirop','limonade'],
+  'Surgelés': ['surgele','glace','frites','poisson pane','pizza surgelee'],
+  'Hygiène et maison': ['papier toilette','essuie tout','sopalin','lessive','adoucissant','liquide vaisselle','pastille','eponge','savon','shampoing','shampooing','gel douche','dentifrice','brosse a dents','deodorant','sac poubelle','sacs poubelle','mouchoir','coton','javel','nettoyant','film','aluminium','papier cuisson','piles','ampoule']
+};
+var RAYON_LIST = [];
+for(var rk in RAYON_KW){ RAYON_KW[rk].forEach(function(k){ RAYON_LIST.push([k, rk]); }); }
+RAYON_LIST.sort(function(a, b){ return b[0].length - a[0].length; });
+function rayonOf(name){ var n = ' ' + normTxt(name) + ' '; for(var i = 0; i < RAYON_LIST.length; i++) if(n.indexOf(' ' + RAYON_LIST[i][0]) >= 0) return RAYON_LIST[i][1]; return 'Autres'; }
+function coursesHtml(items){
+  var groups = {}, order = [], done = [];
+  items.forEach(function(x){
+    if(x.done){ done.push(x); return; }
+    var k = normTxt(x.name);
+    if(!groups[k]){ groups[k] = {name: x.name, ids: [], rayon: rayonOf(x.name)}; order.push(k); }
+    groups[k].ids.push(x.id);
+  });
+  var gl = order.map(function(k){ return groups[k]; });
+  gl.sort(function(a, b){ var d = RAYONS.indexOf(a.rayon) - RAYONS.indexOf(b.rayon); return d || normTxt(a.name).localeCompare(normTxt(b.name)); });
+  var h = '', last = '';
+  gl.forEach(function(g){
+    if(g.rayon !== last){ last = g.rayon; h += '<div class="rayh">' + esc(g.rayon) + '</div>'; }
+    h += '<div class="row" data-col="courses" data-id="' + esc(g.ids[0]) + '" data-ids="' + esc(g.ids.join(',')) + '"><span class="box"></span><span style="flex:1">' + esc(g.name) + (g.ids.length > 1 ? ' <span class="mult">×' + g.ids.length + '</span>' : '') + '</span></div>';
+  });
+  if(done.length){
+    h += '<div class="rayh">Dans le panier</div>';
+    done.forEach(function(x){ h += '<div class="row done" data-col="courses" data-id="' + esc(x.id) + '"><span class="box">✓</span><span style="flex:1">' + esc(x.name) + '</span></div>'; });
+  }
+  return h || '<div class="empty">Rien à acheter</div>';
+}
+var freq = {};
+function freqKey(name){ return normTxt(name).replace(/ /g, '-').slice(0, 60); }
+function bumpFreq(name){
+  var k = freqKey(name); if(!k || !root) return;
+  root.child('freq/' + k).transaction(function(c){ c = c || {n: 0}; c.n = (c.n || 0) + 1; c.name = String(name).slice(0, 80); c.last = Date.now(); return c; });
+}
+function chipsHtml(max){
+  var cur = {}, arr = [];
+  lists.courses.forEach(function(x){ if(!x.done) cur[normTxt(x.name)] = 1; });
+  for(var k in freq){ var f = freq[k]; if(f && f.name && (f.n || 0) >= 2 && !cur[normTxt(f.name)]) arr.push(f); }
+  arr.sort(function(a, b){ return (b.n - a.n) || ((b.last || 0) - (a.last || 0)); });
+  return arr.slice(0, max).map(function(f){ return '<button type="button" class="chip" data-chip="' + esc(f.name) + '">+ ' + esc(f.name) + '</button>'; }).join('');
+}
+function renderChips(){ var el = $('chips-courses'); if(el) el.innerHTML = chipsHtml(4); var s2 = $('schips'); if(s2){ var c = chipsHtml(12); s2.innerHTML = c || '<div class="sub">Les articles que vous achetez souvent apparaîtront ici au fil des courses.</div>'; } }
+function addCourse(name){
+  name = String(name || '').trim().slice(0, 80); if(!name) return;
+  root.child('courses').push({name: name, done: false, at: Date.now()}).catch(function(){ status('Ajout impossible'); });
+  bumpFreq(name);
+}
+var favs = {}, overrides = {};
+function favKey(nom){ return normTxt(nom).replace(/ /g, '-').slice(0, 60) || 'plat'; }
+function isFav(p){ return !!(p && p.nom && favs[favKey(p.nom)]); }
+function toggleFav(p){
+  if(!p || !p.nom) return;
+  var k = favKey(p.nom);
+  if(favs[k]) root.child('favoris/' + k).remove();
+  else root.child('favoris/' + k).set({nom: p.nom, url: p.url || '', source: p.source || '', temps: p.temps || '', difficulte: p.difficulte || '', portions: p.portions || 0, ingredients: p.ingredients || [], at: Date.now()});
+}
+function menuEff(){
+  var m = (jour && jour.menu) || [];
+  return m.map(function(x){
+    var o = overrides[x.date];
+    if(o && o.nom){ var y = {}; for(var k in o) y[k] = o[k]; y.date = x.date; y.swapped = true; return y; }
+    return x;
+  });
+}
+
 /* ---------- listes ---------- */
 function renderList(name){
   var today = new Date().getDay();
   var items = lists[name].filter(function(x){ return x.rep == null || x.rep === today; }), el = $('l-' + name);
   $('n' + name).textContent = items.filter(function(x){ return !x.done; }).length;
-  if(!items.length){ el.innerHTML = '<div class="empty">' + (name === 'courses' ? 'Rien à acheter' : 'Rien à faire') + '</div>'; return; }
+  if(name === 'courses'){ el.innerHTML = coursesHtml(items); renderChips(); if(sheetKind === name) openSheet(name); return; }
+  if(!items.length){ el.innerHTML = '<div class="empty">Rien à faire</div>'; return; }
   var h = '';
   for(var i = 0; i < items.length; i++){
     var it = items[i];
@@ -119,7 +195,7 @@ function resetRecurring(name){
 }
 /* plat du soir : l'entrée du menu du jour si elle existe, sinon le champ plat */
 function platDuJour(){
-  var tk = todayKey(new Date()), m = (jour && jour.menu) || [];
+  var tk = todayKey(new Date()), m = menuEff();
   for(var i = 0; i < m.length; i++) if(m[i].date === tk) return m[i];
   return (jour && jour.plat) || {};
 }
@@ -151,7 +227,7 @@ function renderJour(){
   }
 }
 function renderMenu(){
-  var menu = (jour && jour.menu) || [], tk = todayKey(new Date()), h = '';
+  var menu = menuEff(), tk = todayKey(new Date()), h = '';
   menu.forEach(function(mm){
     if(mm.date < tk) return;
     var d = new Date(mm.date + 'T12:00:00');
@@ -192,10 +268,11 @@ function loadMeteo(){
   p.then(function(g){
     if(!carbu || Date.now() - carbu.at.getTime() > 1800000) setTimeout(function(){ try { loadCarbu(); } catch(e){ $('carbul').innerHTML = '<div class="empty">Erreur : ' + esc(e.message) + '</div>'; } }, 10);
     return fetch('https://api.open-meteo.com/v1/forecast?timezone=Europe%2FParis&forecast_days=7&latitude=' + g.lat + '&longitude=' + g.lon +
-      '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code&hourly=precipitation_probability,temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max,precipitation_sum&wind_speed_unit=kmh');
+      '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code&hourly=precipitation_probability,temperature_2m,weather_code,wind_gusts_10m,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max,precipitation_sum&wind_speed_unit=kmh');
   }).then(function(r){ return r.json(); }).then(function(m){
     lastMeteo = m;
     try { renderGel(m); } catch(e){}
+    try { renderAlertes(m); } catch(e){}
     var t = Math.round(m.current.temperature_2m), code = m.current.weather_code;
     $('mt').textContent = t + '°';
     $('mi').textContent = icon(code);
@@ -366,6 +443,19 @@ function renderGel(m){
   if(msg){ el.innerHTML = msg; el.className = 'gel'; } else el.className = 'gel hide';
 }
 
+/* ---------- alertes vent et pluie en direct (6 prochaines heures) ---------- */
+function renderAlertes(m){
+  var el = $('alerte'); if(!el) return;
+  var h = new Date().getHours(), H = m.hourly, g = H.wind_gusts_10m || [], p = H.precipitation || [];
+  var mg = 0, mgh = -1, mp = 0, mph = -1;
+  for(var i = h; i <= h + 6 && i < g.length; i++){ if(g[i] > mg){ mg = g[i]; mgh = i; } if(p[i] > mp){ mp = p[i]; mph = i; } }
+  var msgs = [];
+  if(mg >= 60) msgs.push('<b>💨 Rafales jusqu\'à ' + Math.round(mg) + ' km/h</b> ' + (mgh <= h ? 'en ce moment' : 'vers ' + (mgh % 24) + ' h'));
+  if(mp >= 3) msgs.push('<b>🌧 Grosse averse</b> ' + (mph <= h ? 'en ce moment' : 'vers ' + (mph % 24) + ' h') + ' · ' + Math.round(mp) + ' mm en une heure');
+  el.innerHTML = msgs.join('<br>');
+  el.className = msgs.length ? 'alerte' : 'alerte hide';
+}
+
 /* ---------- petit mot ---------- */
 var motTimer = null, motFocus = false;
 function watchMot(){
@@ -468,6 +558,7 @@ function ingHtml(ing){
 var sheetKind = null;
 function closeSheet(){ sheetKind = null; show('sheet', false); document.body.style.overflow = ''; }
 function rowsHtml(name){
+  if(name === 'courses') return coursesHtml(lists.courses);
   var items = lists[name], h = '';
   if(!items.length) return '<div class="empty">' + (name === 'courses' ? 'Rien à acheter' : 'Rien à faire') + '</div>';
   for(var i = 0; i < items.length; i++){
@@ -505,26 +596,36 @@ function openSheet(kind){
         (kind === 'taches' ? '<select id="srep"><option value="">Une fois</option>' + [1,2,3,4,5,6,0].map(function(d){ return '<option value="' + d + '">Chaque ' + JOURS[d].toLowerCase() + '</option>'; }).join('') + '</select>' : '') +
         '<button class="main" type="submit">Ajouter</button></form>' +
         (kind === 'taches' ? '<div class="sub" style="margin-top:8px">Une tâche « chaque mardi » n’apparaît sur l’écran que le mardi, et revient toute seule la semaine suivante.</div>' : '') +
-        '<div style="text-align:right;margin-top:12px"><button class="link" type="button" data-clear2="' + kind + '">Retirer ' + (kind === 'courses' ? 'les cochés' : 'les faites') + '</button></div>';
+        '<div style="text-align:right;margin-top:12px"><button class="link" type="button" data-clear2="' + kind + '">Retirer ' + (kind === 'courses' ? 'les cochés' : 'les faites') + '</button></div>' +
+        (kind === 'courses' ? '<div class="shead">Souvent achetés</div><div class="chips" id="schips"></div>' : '');
   } else if(kind === 'plat'){
     var p = platDuJour(), ing = p.ingredients || [];
     t = 'Ce soir';
     h = '<div class="splat">' + ($('pimg').innerHTML) + '</div><div class="pn" style="font-size:28px;margin-top:14px">' + esc(p.nom || 'En attente de la suggestion du jour') + '</div><div class="ssub">' + esc($('pd').textContent) + (p.portions ? ' · ' + p.portions + ' pers.' : '') + '</div>';
     if(p.url) h += '<a class="btn" href="' + esc(p.url) + '" target="_blank" rel="noopener" style="margin-top:16px">Voir la recette</a>';
+    if(p.nom) h += ' <button class="favb' + (isFav(p) ? ' on' : '') + '" type="button" id="favb">' + (isFav(p) ? '❤️ Dans vos favoris' : '🤍 Ajouter aux favoris') + '</button>';
     h += ingHtml(ing);
     var rec = ((jour && jour.plats_recents) || []).slice(1, 8);
     if(rec.length) h += '<div class="shead">Déjà proposés</div>' + rec.map(function(x){ return '<div class="arow">' + esc(x) + '</div>'; }).join('');
   } else if(kind === 'menu'){
-    var menu = (jour && jour.menu) || [];
+    var menu = menuEff();
     t = 'Menu de la semaine';
     if(!menu.length) h = '<div class="empty">Le menu de la semaine arrive à la prochaine mise à jour du matin.</div>';
     else h = '<div class="sub" style="margin-bottom:4px">Coche les recettes que tu vas cuisiner, puis ajoute leurs ingrédients aux courses.</div>';
     menu.forEach(function(mm, i){
       var d = new Date(mm.date + 'T12:00:00'), on = !!menuSel[mm.date];
       h += '<div class="mrow' + (on ? ' msel' : '') + '" data-mi="' + i + '"><span class="box mbox">' + (on ? '✓' : '') + '</span><div class="md">' + (mm.date === todayKey(new Date()) ? "Ce soir" : JOURS[d.getDay()] + ' ' + d.getDate()) + '</div><div style="flex:1;min-width:0"><div class="mn">' + esc(mm.nom) + '</div><div class="sub">' + esc([mm.temps, mm.source].filter(Boolean).join(' · ')) + '</div></div>' +
+        '<button class="mic" type="button" data-favi="' + i + '" aria-label="Favori">' + (isFav(mm) ? '❤️' : '🤍') + '</button>' +
+        '<button class="mic" type="button" data-swapi="' + i + '" aria-label="Changer ce plat">⇄</button>' +
         (mm.url ? '<a class="mlink" href="' + esc(mm.url) + '" target="_blank" rel="noopener">Recette</a>' : '') + '</div>';
     });
+    if(menu.length) h += '<div class="sub" style="margin-top:6px">🤍 ajoute un plat à vos favoris · ⇄ le remplace par un de vos favoris</div>';
     h += '<div id="mingr">' + menuIngHtml(menu) + '</div>';
+    var fl = []; for(var fk in favs) if(favs[fk] && favs[fk].nom) fl.push(favs[fk]);
+    if(fl.length){
+      fl.sort(function(a, b){ return normTxt(a.nom).localeCompare(normTxt(b.nom)); });
+      h += '<div class="shead">Vos favoris ❤️</div>' + fl.map(function(f){ return '<div class="arow" style="display:flex;align-items:center"><span style="flex:1">' + esc(f.nom) + '</span>' + (f.url ? '<a class="mlink" href="' + esc(f.url) + '" target="_blank" rel="noopener">Recette</a>' : '') + '</div>'; }).join('');
+    }
   } else if(kind === 'wifi'){
     var w = (config && config.wifi) || {};
     t = 'Wi-Fi invités';
@@ -547,12 +648,15 @@ function openSheet(kind){
     e.preventDefault(); var inp = f.querySelector('input'), v = inp.value.trim(); if(!v) return; inp.value = '';
     var data = {name: v.slice(0, 80), done: false, at: Date.now()}, sel = $('srep');
     if(sel && sel.value !== '') data.rep = parseInt(sel.value, 10);
+    if(kind === 'courses'){ addCourse(v); return; }
     root.child(kind).push(data).catch(function(){ status('Ajout impossible'); });
   });
   var c2 = document.querySelector('[data-clear2]');
   if(c2) c2.addEventListener('click', function(){
     var up = {}; lists[kind].forEach(function(x){ if(x.done && x.rep == null) up[x.id] = null; }); root.child(kind).update(up);
   });
+  if(kind === 'courses') renderChips();
+  if(kind === 'plat') bindFav();
   if(kind === 'plat' || kind === 'menu') bindIng();
   if(kind === 'menu') bindMenuSel();
   if(kind === 'mot') $('mot2ok').addEventListener('click', function(){ $('mot').value = $('mot2').value; saveMot(); closeSheet(); });
@@ -587,17 +691,44 @@ function bindIng(){
     });
   }
 function bindMenuSel(){
-  var menu = (jour && jour.menu) || [];
+  var menu = menuEff();
   var rows = document.querySelectorAll('#sheetbody .mrow[data-mi]');
   for(var i = 0; i < rows.length; i++){
     rows[i].addEventListener('click', function(e){
       if(e.target.tagName === 'A') return;
       var mm = menu[parseInt(this.getAttribute('data-mi'), 10)]; if(!mm) return;
+      if(e.target.getAttribute('data-favi') != null){ toggleFav(mm); return; }
+      if(e.target.getAttribute('data-swapi') != null){ openSwap(mm); return; }
       menuSel[mm.date] = !menuSel[mm.date];
       this.className = 'mrow' + (menuSel[mm.date] ? ' msel' : '');
       this.querySelector('.mbox').textContent = menuSel[mm.date] ? '✓' : '';
       $('mingr').innerHTML = menuIngHtml(menu);
       bindIng();
+    });
+  }
+}
+function bindFav(){
+  var b = $('favb'); if(!b) return;
+  b.addEventListener('click', function(){ toggleFav(platDuJour()); });
+}
+function openSwap(mm){
+  var d = new Date(mm.date + 'T12:00:00'), fl = [];
+  for(var fk in favs) if(favs[fk] && favs[fk].nom) fl.push(favs[fk]);
+  fl.sort(function(a, b){ return normTxt(a.nom).localeCompare(normTxt(b.nom)); });
+  var h = '<div class="sub">Remplacer « ' + esc(mm.nom) + ' » (' + JOURS[d.getDay()].toLowerCase() + ' ' + d.getDate() + ') par :</div>';
+  if(!fl.length) h += '<div class="empty" style="margin-top:12px">Vous n\'avez pas encore de favoris. Touchez 🤍 à côté d\'un plat que vous avez aimé.</div>';
+  fl.forEach(function(f){ h += '<div class="arow pick" data-pick="' + esc(favKey(f.nom)) + '">' + esc(f.nom) + '<div class="sub">' + esc([f.temps, f.source].filter(Boolean).join(' · ')) + '</div></div>'; });
+  if(mm.swapped) h += '<div class="arow pick" data-pick="__reset" style="color:#007aff">↺ Remettre le plat prévu</div>';
+  h += '<div style="margin-top:14px"><button type="button" id="swapback">← Retour au menu</button></div>';
+  $('sheetbody').innerHTML = h;
+  $('swapback').addEventListener('click', function(){ openSheet('menu'); });
+  var ps = document.querySelectorAll('#sheetbody [data-pick]');
+  for(var i = 0; i < ps.length; i++){
+    ps[i].addEventListener('click', function(){
+      var k = this.getAttribute('data-pick');
+      var done = function(){ openSheet('menu'); };
+      if(k === '__reset') root.child('menuOverride/' + mm.date).remove().then(done, done);
+      else if(favs[k]) root.child('menuOverride/' + mm.date).set(favs[k]).then(done, done);
     });
   }
 }
@@ -625,12 +756,16 @@ function bindSheets(){
 function bind(){
   document.addEventListener('click', function(e){
     var t = e.target, row = null;
+    if(t.getAttribute && t.getAttribute('data-chip')){ addCourse(t.getAttribute('data-chip')); return; }
     if(t.getAttribute && t.getAttribute('data-delt')) return;
     while(t && t !== document){ if(t.getAttribute && t.getAttribute('data-id')){ row = t; break; } t = t.parentNode; }
     if(!row) return;
     var name = row.getAttribute('data-col'), id = row.getAttribute('data-id'), it = null;
     for(var i = 0; i < lists[name].length; i++) if(lists[name][i].id === id) it = lists[name][i];
-    if(it) root.child(name + '/' + id).update({done: !it.done, doneAt: Date.now()}).catch(function(){ status('Modification impossible'); });
+    if(!it) return;
+    var ids = (row.getAttribute('data-ids') || id).split(','), up = {}, nd = !it.done, now = Date.now();
+    ids.forEach(function(x){ up[x + '/done'] = nd; up[x + '/doneAt'] = now; });
+    root.child(name).update(up).catch(function(){ status('Modification impossible'); });
   });
   var forms = document.querySelectorAll('form.add');
   for(var fi = 0; fi < forms.length; fi++){
@@ -640,6 +775,7 @@ function bind(){
         var inp = f.querySelector('input'), v = inp.value.trim(), name = f.getAttribute('data-col');
         if(!v) return;
         inp.value = '';
+        if(name === 'courses'){ addCourse(v); return; }
         root.child(name).push({name: v.slice(0, 80), done: false, at: Date.now()}).catch(function(){ status('Ajout impossible'); });
       });
     })(forms[fi]);
@@ -690,6 +826,10 @@ function start(code){
     bind();
     watchList('courses'); watchList('taches');
     watchMot(); watchDates(); bindTimer(); bindSheets();
+    root.child('freq').on('value', function(s){ freq = s.val() || {}; renderChips(); });
+    var refreshMenu = function(){ renderJour(); renderMenu(); if(sheetKind === 'plat' || sheetKind === 'menu') openSheet(sheetKind); };
+    root.child('favoris').on('value', function(s){ favs = s.val() || {}; refreshMenu(); });
+    root.child('menuOverride').on('value', function(s){ overrides = s.val() || {}; refreshMenu(); });
     root.child('config').on('value', function(s){ config = s.val(); loadMeteo(); renderWifi(); });
     loadJour();
     setInterval(loadJour, 30 * 60000);
