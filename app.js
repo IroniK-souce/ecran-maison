@@ -116,6 +116,12 @@ function resetRecurring(name){
   });
   if(any) root.child(name).update(up);
 }
+/* plat du soir : l'entrée du menu du jour si elle existe, sinon le champ plat */
+function platDuJour(){
+  var tk = todayKey(new Date()), m = (jour && jour.menu) || [];
+  for(var i = 0; i < m.length; i++) if(m[i].date === tk) return m[i];
+  return (jour && jour.plat) || {};
+}
 /* ---------- agenda + plat (data.json mis à jour chaque jour) ---------- */
 function todayKey(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 function renderJour(){
@@ -133,7 +139,7 @@ function renderJour(){
   if(!h) h = '<div class="empty">' + (x.agenda_relie ? 'Aucun rendez-vous' : 'Agenda pas encore relié') + '</div>';
   $('agenda').innerHTML = h;
   $('agup').textContent = x.maj ? ('maj ' + x.maj) : '';
-  var p = x.plat;
+  var p = platDuJour();
   if(p && p.nom){
     $('pn').textContent = p.nom;
     var bits = []; if(p.temps) bits.push(p.temps); if(p.difficulte) bits.push(p.difficulte); if(p.source) bits.push('Trouvée sur ' + p.source);
@@ -490,7 +496,7 @@ function openSheet(kind){
         (kind === 'taches' ? '<div class="sub" style="margin-top:8px">Une tâche « chaque mardi » n’apparaît sur l’écran que le mardi, et revient toute seule la semaine suivante.</div>' : '') +
         '<div style="text-align:right;margin-top:12px"><button class="link" type="button" data-clear2="' + kind + '">Retirer ' + (kind === 'courses' ? 'les cochés' : 'les faites') + '</button></div>';
   } else if(kind === 'plat'){
-    var p = (jour && jour.plat) || {}, ing = p.ingredients || [];
+    var p = platDuJour(), ing = p.ingredients || [];
     t = 'Ce soir';
     h = '<div class="splat">' + ($('pimg').innerHTML) + '</div><div class="pn" style="font-size:28px;margin-top:14px">' + esc(p.nom || 'En attente de la suggestion du jour') + '</div><div class="ssub">' + esc($('pd').textContent) + (p.portions ? ' · ' + p.portions + ' pers.' : '') + '</div>';
     if(p.url) h += '<a class="btn" href="' + esc(p.url) + '" target="_blank" rel="noopener" style="margin-top:16px">Voir la recette</a>';

@@ -1,6 +1,6 @@
 {
   "date": "2026-11-12",
-  "maj": "13:15",
+  "maj": "16:47",
   "agenda_relie": false,
   "agenda": [],
   "plat": {
@@ -25,6 +25,139 @@
   "plats_recents": [
     "Quiche poulet, champignons et brocolis"
   ],
-  "menu": [],
+  "menu": [
+    {
+      "nom": "Quiche poulet, champignons et brocolis",
+      "temps": "35 min",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/recette/quiche-au-poulet-brocolis-et-champignons-804",
+      "portions": 6,
+      "ingredients": [
+        "1 brocoli",
+        "2 escalopes de poulet",
+        "1 oignon",
+        "1 pâte brisée",
+        "250 g de champignons",
+        "3 œufs",
+        "20 cl de crème liquide",
+        "Fromage râpé",
+        "Sel, poivre"
+      ],
+      "date": "2026-11-12"
+    },
+    {
+      "date": "2026-11-13",
+      "nom": "Velouté de potimarron et châtaignes rôties",
+      "temps": "40 min",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/recette/veloute-de-potimarron-et-chataignes-roties-3008",
+      "portions": 4,
+      "ingredients": [
+        "1 potimarron (environ 1 kg)",
+        "200 g de châtaignes cuites",
+        "1 oignon",
+        "1 gousse d'ail",
+        "50 cl de bouillon de légumes",
+        "20 cl de crème liquide",
+        "1 c. à soupe d'huile d'olive",
+        "Sel, poivre"
+      ]
+    },
+    {
+      "date": "2026-11-14",
+      "nom": "Gratin de pâtes au jambon et au fromage",
+      "temps": "40 min",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/recette/gratin-de-pates-pas-cher-au-jambon-et-au-fromage-2623",
+      "portions": 4,
+      "ingredients": [
+        "400 g de pâtes",
+        "4 tranches de jambon",
+        "10 cl de crème fraîche",
+        "150 g de fromage râpé",
+        "Une noix de beurre"
+      ]
+    },
+    {
+      "date": "2026-11-15",
+      "nom": "Curry de pois chiches au lait de coco et épinards",
+      "temps": "20 min",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/recette/curry-de-pois-chiches-au-lait-de-coco-et-epinards-3014",
+      "portions": 4,
+      "ingredients": [
+        "400 g de pois chiches cuits",
+        "150 g d'épinards frais",
+        "1 oignon",
+        "2 gousses d'ail",
+        "200 ml de lait de coco",
+        "2 c. à soupe de pâte de curry",
+        "1 c. à soupe d'huile de coco ou d'olive",
+        "Coriandre fraîche",
+        "Sel, poivre"
+      ]
+    },
+    {
+      "date": "2026-11-16",
+      "nom": "Papillotes de saumon aux légumes d'hiver",
+      "temps": "",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/des-papillotes-de-saumon-aux-legumes-colorees-et-parfumees-qui-font-craquer-pour-un-diner-convivial-46869",
+      "portions": 2,
+      "ingredients": [
+        "2 filets de saumon",
+        "1 carotte",
+        "1 courgette",
+        "1/2 poireau",
+        "Huile d'olive",
+        "Herbes de Provence",
+        "Sel, poivre"
+      ]
+    },
+    {
+      "date": "2026-11-17",
+      "nom": "Risotto aux champignons et parmesan",
+      "temps": "30 min",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/recette/risotto-aux-champignons-et-parmesan-2922",
+      "portions": 4,
+      "ingredients": [
+        "300 g de riz arborio",
+        "400 g de champignons mélangés",
+        "1,2 l de bouillon de légumes",
+        "1 oignon",
+        "2 gousses d'ail",
+        "150 ml de vin blanc sec",
+        "100 g de parmesan râpé",
+        "50 g de beurre",
+        "Huile d'olive",
+        "Sel, poivre"
+      ]
+    },
+    {
+      "date": "2026-11-18",
+      "nom": "Chili con carne express",
+      "temps": "20 min de cuisson",
+      "difficulte": "Facile",
+      "source": "familinparis.fr",
+      "url": "https://www.familinparis.fr/recette-simple-rapide-chili-con-carne",
+      "portions": 4,
+      "ingredients": [
+        "500 g de bœuf haché",
+        "500 g de tomates concassées en boîte",
+        "500 g de haricots rouges en boîte (égouttés)",
+        "1 ou 2 oignons rouges",
+        "Huile d'olive",
+        "Épices mexicaines (facultatif)",
+        "Sel, poivre"
+      ]
+    }
+  ],
   "vigilance": {}
 }
