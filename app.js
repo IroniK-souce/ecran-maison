@@ -183,7 +183,7 @@ function loadMeteo(){
       .then(function(r){ return r.json(); })
       .then(function(d){ if(!d.results || !d.results.length) throw new Error('ville'); geo = {ville: ville, lat: d.results[0].latitude, lon: d.results[0].longitude}; return geo; });
   p.then(function(g){
-    if(!carbu || Date.now() - carbu.at.getTime() > 1800000) setTimeout(loadCarbu, 10);
+    if(!carbu || Date.now() - carbu.at.getTime() > 1800000) setTimeout(function(){ try { loadCarbu(); } catch(e){ $('carbul').innerHTML = '<div class="empty">Erreur : ' + esc(e.message) + '</div>'; } }, 10);
     return fetch('https://api.open-meteo.com/v1/forecast?timezone=Europe%2FParis&forecast_days=7&latitude=' + g.lat + '&longitude=' + g.lon +
       '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code&hourly=precipitation_probability,temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max,precipitation_sum&wind_speed_unit=kmh');
   }).then(function(r){ return r.json(); }).then(function(m){
@@ -237,6 +237,7 @@ function carbuQuery(where){
     .then(function(d){ if(!d || !d.results) throw new Error((d && (d.message || d.error_code)) || 'réponse vide'); return d.results; });
 }
 function loadCarbu(){
+  try { $('carbul').innerHTML = '<div class="empty">Recherche des stations…</div>'; } catch(e){}
   if(!geo){ $('carbul').innerHTML = '<div class="empty">Règle ta ville dans Réglages</div>'; return; }
   var pt = "geom'POINT(" + geo.lon + ' ' + geo.lat + ")'", lastErr = '';
   carbuQuery('within_distance(geom, ' + pt + ', 10km)')
