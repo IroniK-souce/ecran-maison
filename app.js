@@ -1,5 +1,10 @@
 (function(){
 'use strict';
+/* Écran Maison · tableau de bord du foyer
+   Données : Firebase Realtime Database, sous foyers/<code>/ :
+     courses, taches, mot, dates, config {ville, wifi, membres}, freq, favoris, menuOverride
+   data.json (dépôt) : agenda, plat, menu de la semaine, vigilance (mis à jour chaque matin).
+   Compatible Safari 12 (iPad Air 1) : ES5 uniquement. */
 var FIREBASE = {
   apiKey: "AIzaSyB4Wkhy-5_AsqyqVJZsBRKX8wPVUNAXwrg",
   authDomain: "ecran-maison-901d5.firebaseapp.com",
@@ -10,61 +15,123 @@ var FIREBASE = {
   appId: "1:389932373217:web:3e85d16139ed4d16f193a0"
 };
 var KEY = 'ecran-maison-code';
-var root = null, lists = {courses: [], taches: []}, config = null, jour = null;
+var DATA_KEYS = ['courses', 'taches', 'mot', 'dates', 'config', 'freq', 'favoris', 'menuOverride'];
+var root = null, lists = {courses: [], taches: []}, raw = {courses: {}, taches: {}, dates: {}}, config = null, jour = null;
 
 function $(id){ return document.getElementById(id); }
+function $$(sel, el){ return Array.prototype.slice.call((el || document).querySelectorAll(sel)); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
-function status(t){ $('st').textContent = t; }
 function pad(n){ return (n < 10 ? '0' : '') + n; }
-function show(id, on){ var el = $(id); el.className = on ? el.className.replace(/\s*hide/g, '') : (el.className.indexOf('hide') >= 0 ? el.className : el.className + ' hide'); }
+function show(id, on){ var el = typeof id === 'string' ? $(id) : id; if(!el) return; var c = el.className.replace(/\s*\bhide\b/g, ''); el.className = on ? c : c + ' hide'; }
+function cls(el, c, on){ if(!el) return; var x = (' ' + el.className + ' ').replace(' ' + c + ' ', ' ').replace(/^\s+|\s+$/g, ''); el.className = on ? (x ? x + ' ' : '') + c : x; }
+function store(k, v){ try { if(v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); return true; } catch(e){ return false; } }
+function load(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function loadJSON(k, def){ try { var v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? def : v; } catch(e){ return def; } }
+function safe(fn){ try { fn(); } catch(e){ if(window.console) console.error(e); } }
+function status(t){ var el = $('st'); if(el) el.textContent = t; }
 var JOURS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
 var MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-function monthKey(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1); }
-function euro(n){ return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €'; }
-function num(v){ var n = parseFloat(String(v).replace(',', '.').replace(/[^\d.\-]/g, '')); return isNaN(n) ? null : n; }
-function store(k, v){ try { if(v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch(e){} }
-function load(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function todayKey(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function addDays(d, n){ var x = new Date(d.getFullYear(), d.getMonth(), d.getDate() + n, 12); return x; }
+function hm(ts){ var d = new Date(ts); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
 
-/* ---------- horloge ---------- */
-function tick(){
-  var d = new Date();
-  nightCheck(d);
-  $('clk').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
-  $('date').textContent = JOURS[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
-  $('calday').textContent = JOURS[d.getDay()];
-  $('calnum').textContent = d.getDate();
+/* ---------- icônes (traits fins, même style partout) ---------- */
+var IC = {
+  home: '<path d="M3.5 11.5L12 4.5l8.5 7"/><path d="M6 10v9.5h12V10"/>',
+  pot: '<path d="M4 10h16v4.5A5.5 5.5 0 0 1 14.5 20h-5A5.5 5.5 0 0 1 4 14.5z"/><path d="M2.5 10h19M9.5 6.5c0-1 1-1.5 1-2.5M13.5 6.5c0-1 1-1.5 1-2.5"/>',
+  list: '<path d="M4 6.5l1.5 1.5L8 5.5M4 12.5l1.5 1.5L8 11.5M4 18.5l1.5 1.5L8 17.5M11.5 7h8.5M11.5 13h8.5M11.5 19h8.5"/>',
+  cloud: '<path d="M7.5 18.5h9.5a4 4 0 0 0 .4-7.98A6 6 0 0 0 6 11.2a3.7 3.7 0 0 0 1.5 7.3z"/>',
+  gear: '<circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M5.5 18.5l1.8-1.8M16.7 7.3l1.8-1.8"/>',
+  cart: '<path d="M3 4.5h2.2l2.3 10.5h10.2L20 8H6.3"/><circle cx="9.5" cy="19.3" r="1.3"/><circle cx="16.5" cy="19.3" r="1.3"/>',
+  check: '<rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M8.5 12.2l2.5 2.5 4.6-5"/>',
+  tick: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  cal: '<rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  timer: '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 3h5"/>',
+  fuel: '<path d="M5 20V5.5A1.5 1.5 0 0 1 6.5 4h6A1.5 1.5 0 0 1 14 5.5V20M3.5 20h12M5 10h9"/><path d="M14 8l3 2.5V16a1.5 1.5 0 0 0 3 0V9l-2.5-3"/>',
+  wifi: '<path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.7 15.8a5 5 0 0 1 6.6 0"/><path d="M12 19.2v.1"/>',
+  moon: '<path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/>',
+  note: '<path d="M5 4h14v11l-5 5H5z"/><path d="M14 20v-5h5"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  edit: '<path d="M4.5 19.5h4l10.5-10.5-4-4L4.5 15.5z"/><path d="M13 7l4 4"/>',
+  trash: '<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/>',
+  swap: '<path d="M4 8h13.5l-3.5-3.5M20 16H6.5l3.5 3.5"/>',
+  heart: '<path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/>',
+  gift: '<rect x="4" y="9" width="16" height="11" rx="2"/><path d="M12 9v11M3 9h18M12 9c-2-4-6-4-6-1.5S10 9 12 9zM12 9c2-4 6-4 6-1.5S14 9 12 9z"/>',
+  save: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/>',
+  x: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  chev: '<path d="M9.5 5.5l6.5 6.5-6.5 6.5"/>',
+  book: '<path d="M5 4.5h11a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3z"/><path d="M5 16.5a3 3 0 0 1 3-3h11"/>'
+};
+function ico(n){ return '<svg class="svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (IC[n] || '') + '</svg>'; }
+function fillIcons(scope){ $$('i[data-ic]', scope).forEach(function(i){ var s = document.createElement('span'); s.innerHTML = ico(i.getAttribute('data-ic')); i.parentNode.replaceChild(s.firstChild, i); }); }
+
+/* ---------- message en bas d'écran, avec « Annuler » ---------- */
+var undoFn = null, toastT = null;
+function toast(msg, undo){
+  $('toastm').textContent = msg;
+  $('toastu').style.display = undo ? '' : 'none';
+  undoFn = undo || null;
+  $('toast').className = 'on';
+  clearTimeout(toastT);
+  toastT = setTimeout(function(){ $('toast').className = ''; undoFn = null; }, undo ? 7000 : 2600);
 }
+
+/* ---------- membres du foyer ---------- */
+function membres(){
+  var m = config && config.membres;
+  if(typeof m === 'string') m = m.split(',');
+  m = (m || ['Anthony', 'Lisa']).map(function(x){ return String(x).trim(); }).filter(Boolean);
+  return m.slice(0, 6);
+}
+
+/* ---------- horloge et moment de la journée ---------- */
+function tod(h){ return h >= 5 && h < 11 ? 'matin' : h >= 11 && h < 18 ? 'jour' : h >= 18 && h < 23 ? 'soir' : 'nuit'; }
+function tick(){
+  var d = new Date(), t = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  nightCheck(d);
+  $$('.clk').forEach(function(el){ el.textContent = t; });
+  $('nclk').textContent = t;
+  var ds = JOURS[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
+  $('ndate').textContent = ds;
+  var mm = membres(), m = tod(d.getHours());
+  $('hello').textContent = (m === 'matin' ? 'Bonjour' : m === 'jour' ? 'Bon après-midi' : 'Bonsoir') + (mm.length ? ' ' + mm.join(' & ') : '');
+  $('date').textContent = ds;
+  var b = document.body.className.replace(/\s*tod-\w+/g, '');
+  document.body.className = b + ' tod-' + m;
+}
+function weekNum(d){ var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); var day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); var y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y) / 86400000 + 1) / 7); }
 
 /* ---------- veille, mode nuit, retour à l'accueil, rechargement nocturne ---------- */
 var lastTouch = Date.now(), wakeUntil = 0, loadedAt = Date.now(), forced = false, lastDrift = 0;
 function veilleCfg(){
-  var c = null; try { c = JSON.parse(localStorage.getItem('ecran-veille') || 'null'); } catch(e){}
-  c = c || {};
+  var c = loadJSON('ecran-veille', {});
   return {delay: typeof c.delay === 'number' ? c.delay : 10, nuit: c.nuit !== false, debut: typeof c.debut === 'number' ? c.debut : 22, fin: typeof c.fin === 'number' ? c.fin : 7};
 }
 function isSleeping(){ return document.body.className.indexOf('night') >= 0; }
+function typing(){ var a = document.activeElement; return a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT'); }
 function nightCheck(d){
   var cfg = veilleCfg(), h = d.getHours(), now = Date.now();
   var inNight = cfg.debut > cfg.fin ? (h >= cfg.debut || h < cfg.fin) : (h >= cfg.debut && h < cfg.fin);
   var sleep = forced || (cfg.delay > 0 && now - lastTouch > cfg.delay * 60000) || (cfg.nuit && inNight && now > wakeUntil);
-  var cls = document.body.className.replace(/\s*night/g, '');
-  document.body.className = sleep ? cls + ' night' : cls;
+  if(sleep && typing() && now - lastTouch < 600000) sleep = forced;
+  cls(document.body, 'night', sleep);
   if(sleep){
-    $('vinfo').innerHTML = esc($('mt').textContent) + ' ' + esc($('mi').textContent) + (jour && jour.plat && jour.plat.nom ? '<br><span>Ce soir : ' + esc(jour.plat.nom) + '</span>' : '');
+    var p = platDuJour();
+    $('ninfo').innerHTML = esc($('mt').textContent) + ' ' + esc($('mi').textContent) + (p && p.nom ? '<br><span>Ce soir : ' + esc(p.nom) + '</span>' : '');
     if(now - lastDrift > 60000){
       lastDrift = now;
       var x = Math.round(Math.random() * 80 - 40), y = Math.round(Math.random() * 60 - 30);
-      $('lockbox').style.webkitTransform = $('lockbox').style.transform = 'translate(' + x + 'px,' + y + 'px)';
-    }
-  } else { $('lockbox').style.webkitTransform = $('lockbox').style.transform = ''; }
-  if(now - lastTouch > 60000){
-    var a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT');
-    if(!typing){
-      if(sheetKind) closeSheet();
-      if((window.pageYOffset || document.documentElement.scrollTop) > 0) window.scrollTo(0, 0);
+      $('nbox').style.webkitTransform = $('nbox').style.transform = 'translate(' + x + 'px,' + y + 'px)';
     }
   }
-  if(h === 3 && d.getMinutes() >= 30 && d.getMinutes() < 45 && now - loadedAt > 3600000 && !sheetKind){
+  /* 1 minute sans toucher : on revient à l'accueil */
+  if(now - lastTouch > 60000 && !typing()){
+    if(sheetKind) closeSheet();
+    if(curPage !== 'accueil') goPage('accueil');
+    if((window.pageYOffset || document.documentElement.scrollTop) > 0) window.scrollTo(0, 0);
+  }
+  /* rechargement complet chaque nuit vers 3 h 30, pour rester à jour */
+  if(h === 3 && d.getMinutes() >= 30 && d.getMinutes() < 45 && now - loadedAt > 3600000 && !sheetKind && !typing()){
     location.replace(location.pathname + '?r=' + now + location.hash);
   }
 }
@@ -72,7 +139,7 @@ function touched(e){
   var wasAsleep = isSleeping();
   lastTouch = Date.now(); forced = false;
   if(wasAsleep){
-    try { loadMeteo(); } catch(err){}
+    safe(loadMeteo);
     wakeUntil = Date.now() + 120000;
     nightCheck(new Date());
     if(e && e.type !== 'keydown'){ e.preventDefault(); e.stopPropagation(); }
@@ -81,7 +148,36 @@ function touched(e){
 document.addEventListener('touchstart', touched, {capture: true, passive: false});
 document.addEventListener('mousedown', touched, true);
 document.addEventListener('keydown', touched, true);
-function goVeille(){ forced = true; if(sheetKind) closeSheet(); window.scrollTo(0, 0); nightCheck(new Date()); }
+function goVeille(){ forced = true; if(sheetKind) closeSheet(); goPage('accueil'); nightCheck(new Date()); }
+
+/* ---------- pages ---------- */
+var PAGES = ['accueil', 'cuisine', 'maison', 'infos', 'reglages'], curPage = 'accueil';
+function goPage(p){
+  if(PAGES.indexOf(p) < 0) p = 'accueil';
+  curPage = p;
+  PAGES.forEach(function(x){ cls($('p-' + x), 'on', x === p); });
+  $$('.rbtn').forEach(function(b){ cls(b, 'on', b.getAttribute('data-p') === p); });
+  if(p === 'reglages') fillSettings();
+  if(p === 'infos') safe(renderMeteoDetail);
+  if(window.innerWidth < 900) window.scrollTo(0, 0);
+}
+/* balayage gauche / droite entre les pages */
+(function(){
+  var sx = 0, sy = 0, st = 0, ok = false;
+  document.addEventListener('touchstart', function(e){
+    var t = e.target; ok = true;
+    while(t && t !== document){ if(t.className && typeof t.className === 'string' && (t.className.indexOf('hscroll') >= 0 || t.className.indexOf('infos') >= 0) || t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.id === 'sheet'){ ok = false; break; } t = t.parentNode; }
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
+  }, {passive: true});
+  document.addEventListener('touchend', function(e){
+    if(!ok || sheetKind || isSleeping()) return;
+    var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if(Math.abs(dx) > 90 && Math.abs(dy) < 60 && Date.now() - st < 600){
+      var i = PAGES.indexOf(curPage) + (dx < 0 ? 1 : -1);
+      if(i >= 0 && i < PAGES.length - 1) goPage(PAGES[i]);
+    }
+  }, {passive: true});
+})();
 
 /* ---------- rayons, articles fréquents, favoris ---------- */
 function normTxt(t){ t = String(t || '').toLowerCase(); if(t.normalize) t = t.normalize('NFD').replace(/[̀-ͯ]/g, ''); return t.replace(/œ/g, 'oe').replace(/æ/g, 'ae').replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
@@ -100,26 +196,35 @@ var RAYON_LIST = [];
 for(var rk in RAYON_KW){ RAYON_KW[rk].forEach(function(k){ RAYON_LIST.push([k, rk]); }); }
 RAYON_LIST.sort(function(a, b){ return b[0].length - a[0].length; });
 function rayonOf(name){ var n = ' ' + normTxt(name) + ' '; for(var i = 0; i < RAYON_LIST.length; i++) if(n.indexOf(' ' + RAYON_LIST[i][0]) >= 0) return RAYON_LIST[i][1]; return 'Autres'; }
-function coursesHtml(items){
-  var groups = {}, order = [], done = [];
+/* regroupe les articles identiques (×2) et trie par rayon */
+function groupCourses(items){
+  var groups = {}, order = [];
   items.forEach(function(x){
-    if(x.done){ done.push(x); return; }
+    if(x.done) return;
     var k = normTxt(x.name);
     if(!groups[k]){ groups[k] = {name: x.name, ids: [], rayon: rayonOf(x.name)}; order.push(k); }
     groups[k].ids.push(x.id);
   });
   var gl = order.map(function(k){ return groups[k]; });
   gl.sort(function(a, b){ var d = RAYONS.indexOf(a.rayon) - RAYONS.indexOf(b.rayon); return d || normTxt(a.name).localeCompare(normTxt(b.name)); });
-  var h = '', last = '';
+  return gl;
+}
+function boxHtml(done){ return '<span class="box">' + (done ? ico('tick') : '') + '</span>'; }
+function coursesHtml(items){
+  var gl = groupCourses(items), h = '', last = '';
   gl.forEach(function(g){
-    if(g.rayon !== last){ last = g.rayon; h += '<div class="rayh">' + esc(g.rayon) + '</div>'; }
-    h += '<div class="row" data-col="courses" data-id="' + esc(g.ids[0]) + '" data-ids="' + esc(g.ids.join(',')) + '"><span class="box"></span><span style="flex:1">' + esc(g.name) + (g.ids.length > 1 ? ' <span class="mult">×' + g.ids.length + '</span>' : '') + '</span></div>';
+    if(g.rayon !== last){ last = g.rayon; h += '<div class="gh">' + esc(g.rayon) + '</div>'; }
+    h += '<div class="row" data-col="courses" data-id="' + esc(g.ids[0]) + '" data-ids="' + esc(g.ids.join(',')) + '">' + boxHtml(false) + '<span class="nm">' + esc(g.name) + (g.ids.length > 1 ? ' <span class="mult">×' + g.ids.length + '</span>' : '') + '</span>' +
+      '<button type="button" class="ib" data-act="edit" data-col="courses" data-id="' + esc(g.ids[0]) + '" aria-label="Modifier">' + ico('edit') + '</button>' +
+      '<button type="button" class="ib" data-act="del" data-col="courses" data-ids="' + esc(g.ids.join(',')) + '" aria-label="Supprimer">' + ico('trash') + '</button></div>';
   });
+  var done = items.filter(function(x){ return x.done; });
   if(done.length){
-    h += '<div class="rayh">Dans le panier</div>';
-    done.forEach(function(x){ h += '<div class="row done" data-col="courses" data-id="' + esc(x.id) + '"><span class="box">✓</span><span style="flex:1">' + esc(x.name) + '</span></div>'; });
+    h += '<div class="gh">Dans le panier</div>';
+    done.forEach(function(x){ h += '<div class="row done" data-col="courses" data-id="' + esc(x.id) + '">' + boxHtml(true) + '<span class="nm">' + esc(x.name) + '</span></div>'; });
+    h += '<div style="padding:12px 0 4px"><button type="button" class="b sm ghost" data-act="clear" data-col="courses">' + ico('trash') + 'Retirer les articles cochés</button></div>';
   }
-  return h || '<div class="empty">Rien à acheter</div>';
+  return h || '<div class="empty">Rien à acheter pour l\'instant</div>';
 }
 var freq = {};
 function freqKey(name){ return normTxt(name).replace(/ /g, '-').slice(0, 60); }
@@ -134,10 +239,17 @@ function chipsHtml(max){
   arr.sort(function(a, b){ return (b.n - a.n) || ((b.last || 0) - (a.last || 0)); });
   return arr.slice(0, max).map(function(f){ return '<button type="button" class="chip" data-chip="' + esc(f.name) + '">+ ' + esc(f.name) + '</button>'; }).join('');
 }
-function renderChips(){ var el = $('chips-courses'); if(el) el.innerHTML = chipsHtml(4); var s2 = $('schips'); if(s2){ var c = chipsHtml(12); s2.innerHTML = c || '<div class="sub">Les articles que vous achetez souvent apparaîtront ici au fil des courses.</div>'; } }
+function renderChips(){ var el = $('chips-courses'); if(el) el.innerHTML = chipsHtml(8); }
+var lastAdd = {k: '', t: 0};
 function addCourse(name){
-  name = String(name || '').trim().slice(0, 80); if(!name) return;
-  root.child('courses').push({name: name, done: false, at: Date.now()}).catch(function(){ status('Ajout impossible'); });
+  name = String(name || '').trim().slice(0, 80); if(!name || !root) return;
+  var k = normTxt(name);
+  if(lastAdd.k === k && Date.now() - lastAdd.t < 2500) return;   /* double appui */
+  lastAdd = {k: k, t: Date.now()};
+  var deja = lists.courses.filter(function(x){ return !x.done && normTxt(x.name) === k; }).length;
+  root.child('courses').push({name: name, done: false, at: Date.now()}).then(function(){
+    toast(deja ? name + ' : déjà dans la liste, quantité ×' + (deja + 1) : name + ' ajouté aux courses');
+  }, function(){ toast('Ajout impossible pour le moment'); });
   bumpFreq(name);
 }
 var favs = {}, overrides = {};
@@ -146,42 +258,51 @@ function isFav(p){ return !!(p && p.nom && favs[favKey(p.nom)]); }
 function toggleFav(p){
   if(!p || !p.nom) return;
   var k = favKey(p.nom);
-  if(favs[k]) root.child('favoris/' + k).remove();
-  else root.child('favoris/' + k).set({nom: p.nom, url: p.url || '', source: p.source || '', temps: p.temps || '', difficulte: p.difficulte || '', portions: p.portions || 0, ingredients: p.ingredients || [], at: Date.now()});
+  if(favs[k]) root.child('favoris/' + k).remove().then(function(){ toast('Retiré des favoris'); });
+  else root.child('favoris/' + k).set({nom: p.nom, url: p.url || '', source: p.source || '', temps: p.temps || '', difficulte: p.difficulte || '', portions: p.portions || 0, ingredients: p.ingredients || [], at: Date.now()}).then(function(){ toast('Ajouté aux favoris'); });
 }
+/* menu : 7 jours à partir d'aujourd'hui, avec les plats changés à la main */
 function menuEff(){
-  var m = (jour && jour.menu) || [];
-  return m.map(function(x){
-    var o = overrides[x.date];
-    if(o && o.nom){ var y = {}; for(var k in o) y[k] = o[k]; y.date = x.date; y.swapped = true; return y; }
-    return x;
-  });
-}
-
-/* ---------- listes ---------- */
-function renderList(name){
-  var today = new Date().getDay();
-  var items = lists[name].filter(function(x){ return x.rep == null || x.rep === today; }), el = $('l-' + name);
-  $('n' + name).textContent = items.filter(function(x){ return !x.done; }).length;
-  if(name === 'courses'){ el.innerHTML = coursesHtml(items); renderChips(); if(sheetKind === name) openSheet(name); return; }
-  if(!items.length){ el.innerHTML = '<div class="empty">Rien à faire</div>'; return; }
-  var h = '';
-  for(var i = 0; i < items.length; i++){
-    var it = items[i];
-    h += '<div class="row' + (it.done ? ' done' : '') + '" data-col="' + name + '" data-id="' + esc(it.id) + '"><span class="box">' + (it.done ? '✓' : '') + '</span>' + esc(it.name) + '</div>';
+  var m = (jour && jour.menu) || [], by = {}, out = [], now = new Date();
+  m.forEach(function(x){ by[x.date] = x; });
+  for(var i = 0; i < 7; i++){
+    var dk = todayKey(addDays(now, i)), o = overrides[dk], x = by[dk];
+    if(o && o.nom){ var y = {}; for(var k in o) y[k] = o[k]; y.date = dk; y.swapped = true; y.prevu = x ? x.nom : ''; out.push(y); }
+    else if(x) out.push(x);
+    else out.push({date: dk, nom: ''});
   }
-  el.innerHTML = h;
-  if(sheetKind === name) openSheet(name);
+  return out;
+}
+function platDuJour(){
+  var m = menuEff();
+  if(m[0] && m[0].nom) return m[0];
+  return (jour && jour.plat && jour.plat.nom) ? jour.plat : {};
+}
+var EMO = [['quiche', '🥧'], ['tarte', '🥧'], ['velout', '🥣'], ['soupe', '🥣'], ['potage', '🥣'], ['gratin', '🧀'], ['pates', '🍝'], ['spaghetti', '🍝'], ['lasagne', '🍝'], ['curry', '🍛'], ['saumon', '🐟'], ['poisson', '🐟'], ['cabillaud', '🐟'], ['risotto', '🍚'], ['riz', '🍚'], ['chili', '🌶️'], ['pizza', '🍕'], ['salade', '🥗'], ['burger', '🍔'], ['crepe', '🥞'], ['galette', '🥞'], ['omelette', '🍳'], ['oeuf', '🍳'], ['poulet', '🍗'], ['boeuf', '🥩'], ['steak', '🥩'], ['tacos', '🌮'], ['wrap', '🌯'], ['raclette', '🧀'], ['hachis', '🥔'], ['puree', '🥔']];
+function platEmoji(nom){ var n = normTxt(nom); for(var i = 0; i < EMO.length; i++) if(n.indexOf(EMO[i][0]) >= 0) return EMO[i][1]; return '🍽️'; }
+
+/* ---------- listes synchronisées ---------- */
+function todayItems(name){ var today = new Date().getDay(); return lists[name].filter(function(x){ return x.rep == null || x.rep === today; }); }
+function renderList(name){
+  if(name === 'courses'){
+    var n = lists.courses.filter(function(x){ return !x.done; }).length;
+    $('ncourses').textContent = groupCourses(lists.courses).length; $('ncourses2').textContent = n;
+    $('l-courses').innerHTML = coursesHtml(lists.courses);
+    renderChips(); renderHomeCourses();
+  } else {
+    renderTaches(); renderHomeTaches();
+  }
+  safe(renderInfos); safe(renderShortcuts);
 }
 function watchList(name){
   root.child(name).on('value', function(snap){
     var arr = [], v = snap.val() || {};
-    for(var id in v){ if(v.hasOwnProperty(id) && v[id]) arr.push({id: id, name: v[id].name || '', done: !!v[id].done, at: v[id].at || 0, rep: (typeof v[id].rep === 'number' ? v[id].rep : null), doneAt: v[id].doneAt || 0}); }
+    raw[name] = v;
+    for(var id in v){ if(v.hasOwnProperty(id) && v[id]) arr.push({id: id, name: v[id].name || '', done: !!v[id].done, at: v[id].at || 0, rep: (typeof v[id].rep === 'number' ? v[id].rep : null), doneAt: v[id].doneAt || 0, qui: v[id].qui || '', prio: !!v[id].prio}); }
     arr.sort(function(a, b){ return a.at - b.at; });
-    lists[name] = arr; resetRecurring(name); renderList(name); status('Synchronisé');
+    lists[name] = arr; resetRecurring(name); safe(function(){ renderList(name); }); status('Synchronisé');
   }, function(){ status('Accès refusé · vérifie le code'); });
 }
-
 /* tâches qui reviennent chaque semaine : décochées automatiquement le jour venu */
 function resetRecurring(name){
   var now = new Date(), up = {}, any = false;
@@ -193,61 +314,163 @@ function resetRecurring(name){
   });
   if(any) root.child(name).update(up);
 }
-/* plat du soir : l'entrée du menu du jour si elle existe, sinon le champ plat */
-function platDuJour(){
-  var tk = todayKey(new Date()), m = menuEff();
-  for(var i = 0; i < m.length; i++) if(m[i].date === tk) return m[i];
-  return (jour && jour.plat) || {};
+function tacheHtml(it, compact){
+  var tags = (it.prio && !it.done && !compact ? '<span class="tag p">⚑ important</span>' : '') +
+    (it.qui ? '<span class="tag q">' + esc(compact ? it.qui.charAt(0).toUpperCase() : it.qui) + '</span>' : '') +
+    (!compact && it.rep != null ? '<span class="tag r">↻ chaque ' + JOURS[it.rep].toLowerCase() + '</span>' : '') +
+    (!compact && it.done && it.doneAt ? '<span class="tag">faite ' + (new Date(it.doneAt).toDateString() === new Date().toDateString() ? 'à ' + hm(it.doneAt) : 'le ' + new Date(it.doneAt).getDate() + '/' + (new Date(it.doneAt).getMonth() + 1)) + '</span>' : '');
+  return '<div class="row' + (it.done ? ' done' : '') + (it.prio && !it.done ? ' prio' : '') + '" data-col="taches" data-id="' + esc(it.id) + '">' + boxHtml(it.done) +
+    (compact ? '<span class="nm">' + esc(it.name) + '</span>' + tags : '<span class="nm2"><span class="nm">' + esc(it.name) + '</span>' + (tags ? '<span class="tg">' + tags + '</span>' : '') + '</span>') +
+    (compact ? '' : '<button type="button" class="ib" data-act="edit" data-col="taches" data-id="' + esc(it.id) + '" aria-label="Modifier">' + ico('edit') + '</button><button type="button" class="ib" data-act="del" data-col="taches" data-ids="' + esc(it.id) + '" aria-label="Supprimer">' + ico('trash') + '</button>') + '</div>';
 }
-/* ---------- agenda + plat (data.json mis à jour chaque jour) ---------- */
-function todayKey(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
-function renderJour(){
-  var x = jour || {}, ag = x.agenda || [], h = '', now = new Date();
-  var tk = todayKey(now), tm = new Date(now.getTime() + 86400000), tmk = todayKey(tm);
-  var shown = 0;
-  for(var i = 0; i < ag.length && shown < 6; i++){
-    var a = ag[i], lab;
-    if(a.date === tk) lab = a.heure || 'Journée';
-    else if(a.date === tmk) lab = 'Demain ' + (a.heure || '');
-    else continue;
-    h += '<div class="row" style="cursor:default"><span class="when' + (a.date === tmk ? ' dem' : '') + '">' + esc(lab) + '</span>' + esc(a.titre) + '</div>';
-    shown++;
+function sortTaches(a, b){ return (b.prio - a.prio) || (a.at - b.at); }
+function renderTaches(){
+  var today = new Date().getDay(), all = lists.taches;
+  var auj = all.filter(function(x){ return !x.done && (x.rep == null || x.rep === today); }).sort(sortTaches);
+  var plus = all.filter(function(x){ return x.rep != null && x.rep !== today && !x.done; }).sort(function(a, b){ return ((a.rep - today + 7) % 7) - ((b.rep - today + 7) % 7); });
+  var faites = all.filter(function(x){ return x.done; }).sort(function(a, b){ return b.doneAt - a.doneAt; });
+  var h = '';
+  if(auj.length){ h += '<div class="gh">À faire</div>'; auj.forEach(function(x){ h += tacheHtml(x); }); }
+  if(plus.length){ h += '<div class="gh">Plus tard dans la semaine</div>'; plus.forEach(function(x){ h += tacheHtml(x); }); }
+  if(faites.length){ h += '<div class="gh">Faites</div>'; faites.forEach(function(x){ h += tacheHtml(x); }); if(faites.some(function(x){ return x.rep == null; })) h += '<div style="padding:12px 0 4px"><button type="button" class="b sm ghost" data-act="clear" data-col="taches">' + ico('trash') + 'Retirer les tâches faites</button></div>'; }
+  $('l-taches').innerHTML = h || '<div class="empty">Aucune tâche. Ajoutez-en une au-dessus.</div>';
+  $('ntaches2').textContent = auj.length;
+}
+function renderHomeCourses(){
+  var el = $('h-courses'), gl = groupCourses(lists.courses), h = '', rowsN = window.innerWidth >= 900 && el.clientHeight > 60 ? Math.max(1, Math.floor((el.clientHeight + 4) / 44)) : 3, max = rowsN * 2;
+  var shown = gl.length > max ? gl.slice(0, max - 1) : gl;
+  shown.forEach(function(g){ h += '<div class="row" data-col="courses" data-id="' + esc(g.ids[0]) + '" data-ids="' + esc(g.ids.join(',')) + '">' + boxHtml(false) + '<span class="nm">' + esc(g.name) + (g.ids.length > 1 ? ' <span class="mult">×' + g.ids.length + '</span>' : '') + '</span></div>'; });
+  if(gl.length > max) h += '<div class="more tap" data-act="page" data-p="maison">+ ' + (gl.length - shown.length) + ' autres articles ›</div>';
+  if(!gl.length){
+    var c = chipsHtml(4);
+    h = '<div class="empty" style="width:100%;padding:4px 8px">Rien à acheter.' + (c ? ' Souvent achetés :' : '') + '</div>' + (c ? '<div class="chips" style="padding:0 8px">' + c + '</div>' : '');
   }
-  if(!h) h = '<div class="empty">' + (x.agenda_relie ? 'Aucun rendez-vous' : 'Agenda pas encore relié') + '</div>';
-  $('agenda').innerHTML = h;
-  $('agup').textContent = x.maj ? ('maj ' + x.maj) : '';
-  var p = platDuJour();
-  if(p && p.nom){
-    $('pn').textContent = p.nom;
-    var bits = []; if(p.temps) bits.push(p.temps); if(p.difficulte) bits.push(p.difficulte); if(p.source) bits.push('Trouvée sur ' + p.source);
-    $('pd').textContent = bits.join(' · ');
-    $('pingb').style.display = (p.ingredients && p.ingredients.length) ? '' : 'none';
-    if(p.url && /^https:\/\//.test(p.url)){ $('purl').href = p.url; $('purl').style.display = ''; } else { $('purl').style.display = 'none'; }
-    if(p.image){ $('pimg').innerHTML = '<img alt="" src="' + esc(p.image) + '">'; } else { $('pimg').innerHTML = '🍲'; }
-  }
+  el.innerHTML = h;
+}
+function renderHomeTaches(){
+  var items = todayItems('taches'), todo = items.filter(function(x){ return !x.done; }).sort(sortTaches), done = items.length - todo.length;
+  $('ntaches').textContent = todo.length;
+  $('tdone').textContent = done ? done + ' faite' + (done > 1 ? 's' : '') : '';
+  var h = '', el = $('h-taches'), cap = window.innerWidth >= 900 && el.clientHeight > 40 ? Math.max(1, Math.floor((el.clientHeight + 4) / 46)) : 5;
+  var n = todo.length > cap ? Math.max(1, cap - 1) : cap;
+  todo.slice(0, n).forEach(function(x){ h += tacheHtml(x, true); });
+  if(todo.length > n) h += '<div class="more" style="padding-left:0">+ ' + (todo.length - n) + ' autre' + (todo.length - n > 1 ? 's' : '') + ' ›</div>';
+  $('h-taches').innerHTML = h || '<div class="empty">Tout est fait ✓</div>';
+}
+
+/* ---------- plat, menu, agenda (data.json mis à jour chaque matin) ---------- */
+function platCardHtml(){
+  var p = platDuJour(), bits = [];
+  if(p.temps) bits.push(p.temps); if(p.difficulte) bits.push(p.difficulte); if(p.portions) bits.push(p.portions + ' pers.');
+  var img = p.image && /^https:\/\//.test(p.image) ? '<img alt="" src="' + esc(p.image) + '">' : platEmoji(p.nom);
+  return '<div class="ptx"><div class="pk">Ce soir' + (bits.length ? '<span> · ' + esc(bits.join(' · ')) + '</span>' : '') + '</div>' +
+    '<div class="pn">' + esc(p.nom || 'Pas encore de plat prévu') + '</div>' +
+    (p.nom ? '' : '<div class="pmeta">Choisissez un plat avec « Changer »</div>') +
+    '<div class="pbtns">' + ((p.ingredients || []).length ? '<button type="button" class="b sm" data-act="sheet" data-k="plat">' + ico('cart') + 'Ingrédients</button>' : '') +
+    '<button type="button" class="b sm" data-act="swap" data-date="' + todayKey(new Date()) + '">' + ico('swap') + 'Changer</button></div></div>' +
+    '<div class="pemo">' + img + '</div>';
+}
+function renderPlat(){ $('home-plat').innerHTML = platCardHtml(); $('cui-plat').innerHTML = platCardHtml(); }
+function dayLabel(dk, long){
+  var tk = todayKey(new Date()), tm = todayKey(addDays(new Date(), 1)), d = new Date(dk + 'T12:00:00');
+  if(dk === tk) return long ? "Aujourd'hui" : 'Ce soir';
+  if(dk === tm) return 'Demain';
+  return long ? JOURS[d.getDay()] + ' ' + d.getDate() : JOURS[d.getDay()].slice(0, 3) + '. ' + d.getDate();
 }
 function renderMenu(){
-  var menu = menuEff(), tk = todayKey(new Date()), h = '';
-  menu.forEach(function(mm){
-    if(mm.date < tk) return;
-    var d = new Date(mm.date + 'T12:00:00');
-    h += '<div class="mt' + (mm.date === tk ? ' on' : '') + '"><div class="md">' + (mm.date === tk ? "Ce soir" : JOURS[d.getDay()].slice(0, 3) + '. ' + d.getDate()) + '</div><div class="mn">' + esc(mm.nom) + '</div></div>';
+  var menu = menuEff(), h = '', tk = todayKey(new Date());
+  menu.slice(0, 4).forEach(function(mm){
+    h += '<div class="mday' + (mm.date === tk ? ' on' : '') + '"><div class="md">' + dayLabel(mm.date) + '</div><div class="mn' + (mm.nom ? '' : ' v') + '">' + esc(mm.nom || 'À choisir') + '</div></div>';
   });
-  $('menul').innerHTML = h || '<div class="empty">Le menu de la semaine arrive à la prochaine mise à jour du matin.</div>';
+  $('h-menu').innerHTML = h;
+  var c = '';
+  menu.forEach(function(mm, i){
+    var meta = [mm.temps, mm.source].filter(Boolean).join(' · ');
+    c += '<div class="mrow' + (mm.date === tk ? ' today' : '') + '"><div class="md">' + dayLabel(mm.date, true) + '</div>' +
+      '<div style="flex:1;min-width:0"><div class="mn' + (mm.nom ? '' : ' v') + '">' + esc(mm.nom || 'Rien de prévu') + '</div>' +
+      (meta || mm.swapped ? '<div class="sub">' + esc(meta) + (mm.swapped ? (meta ? ' · ' : '') + 'changé à la main' : '') + '</div>' : '') + '</div>' +
+      (mm.nom ? '<button type="button" class="ib" data-act="fav" data-i="' + i + '" aria-label="Favori" style="color:' + (isFav(mm) ? 'var(--rd)' : 'var(--tx3)') + '">' + ico('heart') + '</button>' : '') +
+      (mm.url && /^https:\/\//.test(mm.url) ? '<a class="ib" href="' + esc(mm.url) + '" target="_blank" rel="noopener" aria-label="Recette">' + ico('book') + '</a>' : '') +
+      '<button type="button" class="b sm ghost" data-act="swap" data-date="' + mm.date + '">' + (mm.nom ? 'Changer' : 'Choisir') + '</button></div>';
+  });
+  $('c-menu').innerHTML = c;
 }
+function agendaItems(){
+  var x = jour || {}, ag = x.agenda || [], now = new Date(), tk = todayKey(now), tmk = todayKey(addDays(now, 1)), out = [];
+  ag.forEach(function(a){ if(a.date === tk || a.date === tmk) out.push(a); });
+  return out;
+}
+function datesList(){
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  return dates.map(function(x){ var d = new Date(x.date + 'T00:00:00'); return {id: x.id, titre: x.titre, date: x.date, n: Math.round((d - today) / 86400000)}; })
+    .filter(function(x){ return !isNaN(x.n) && x.n >= 0; }).sort(function(a, b){ return a.n - b.n; });
+}
+var MABR = ['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
+function evDate(dk){ var d = new Date(dk + 'T12:00:00'); return JOURS[d.getDay()].slice(0, 3) + '<b>' + d.getDate() + '</b>' + MABR[d.getMonth()]; }
+function renderEvents(){
+  var h = '', n = 0, el = $('h-events'), cap = window.innerWidth >= 900 && el.clientHeight > 40 ? Math.max(1, Math.floor((el.clientHeight + 6) / 56)) : 4;
+  agendaItems().forEach(function(a){ if(n >= cap) return; n++; h += '<div class="ev"><div class="d">' + evDate(a.date) + '</div><div class="x">' + esc(a.titre) + '<span>' + esc(a.heure || 'Toute la journée') + '</span></div></div>'; });
+  datesList().forEach(function(x){ if(n >= cap) return; n++; h += '<div class="ev"><div class="d">' + evDate(x.date) + '</div><div class="x c">' + esc(x.titre) + '<span>' + (x.n === 0 ? "C'est aujourd'hui 🎉" : x.n === 1 ? 'Demain' : 'Dans ' + x.n + ' jours') + '</span></div></div>'; });
+  $('h-events').innerHTML = h || '<div class="empty">' + (jour && jour.agenda_relie ? 'Rien aujourd\'hui ni demain' : 'Agenda pas encore relié') + '</div>';
+}
+var infoState = {gel: '', alertes: [], vigi: null, offline: false};
 function renderVigi(){
-  var v = (jour && jour.vigilance) || {}, n = v.niveau, el = $('vigi');
-  if(n === 'orange' || n === 'rouge'){
-    el.className = 'vigi ' + n;
-    el.innerHTML = '<b>⚠︎ Vigilance ' + n + '</b> ' + esc((v.phenomenes || []).join(', ')) + (v.dep ? ' · ' + esc(v.dep) : '') + (v.fin ? '<span> jusqu\'à ' + esc(v.fin) + '</span>' : '');
-    el.href = v.url && /^https:\/\//.test(v.url) ? v.url : 'https://vigilance.meteofrance.fr/';
-  } else el.className = 'vigi hide';
-  var j = $('vigij');
-  if(n === 'jaune'){ j.textContent = '⚠︎ Vigilance jaune : ' + (v.phenomenes || []).join(', '); j.className = 'vigij'; } else j.className = 'vigij hide';
+  var v = (jour && jour.vigilance) || {}, n = v.niveau;
+  infoState.vigi = (n === 'jaune' || n === 'orange' || n === 'rouge') ? {n: n, txt: (v.phenomenes || []).join(', '), fin: v.fin || '', url: v.url && /^https:\/\//.test(v.url) ? v.url : 'https://vigilance.meteofrance.fr/'} : null;
+  safe(renderInfos);
 }
 function loadJour(){
-  fetch('data.json?t=' + Date.now()).then(function(r){ return r.json(); }).then(function(d){ jour = d; renderJour(); renderMenu(); renderVigi(); }).catch(function(){});
+  fetch('data.json?t=' + Date.now()).then(function(r){ return r.json(); }).then(function(d){
+    jour = d; safe(renderPlat); safe(renderMenu); safe(renderEvents); safe(renderVigi);
+    if(sheetKind === 'plat' || sheetKind === 'agenda') openSheet(sheetKind);
+  }).catch(function(){ status('Données du jour indisponibles'); });
 }
+
+/* ---------- infos importantes (bandeau de l'accueil) ---------- */
+function renderInfos(){
+  var p = [], h = new Date().getHours();
+  if(infoState.offline) p.push('<div class="info alert"><b>Hors ligne</b> vos modifications partiront au retour du réseau</div>');
+  var v = infoState.vigi;
+  if(v) p.push('<a class="info ' + (v.n === 'jaune' ? 'warn' : 'alert') + '" href="' + esc(v.url) + '" target="_blank" rel="noopener"><b>⚠︎ Vigilance ' + v.n + '</b>' + esc(v.txt) + (v.fin ? ' · jusqu\'à ' + esc(v.fin) : '') + '</a>');
+  if(infoState.gel) p.push('<div class="info cold" data-act="page" data-p="infos">' + infoState.gel + '</div>');
+  infoState.alertes.forEach(function(a){ p.push('<div class="info warn" data-act="page" data-p="infos">' + a + '</div>'); });
+  if(tmEnd || tmRing) p.push('<div class="info warn" data-act="sheet" data-k="minuteur"><b>⏱ Minuteur</b>' + (tmRing ? 'terminé, touchez pour arrêter' : '<span class="tmv0">' + tmLeft() + '</span>') + '</div>');
+  var prio = todayItems('taches').filter(function(x){ return x.prio && !x.done; });
+  if(prio.length) p.push('<div class="info prio" data-act="page" data-p="maison"><b>⚑ ' + (prio.length > 1 ? prio.length + ' tâches importantes' : 'Important') + '</b>' + esc(prio.length > 1 ? prio.map(function(x){ return x.name; }).slice(0, 2).join(', ') : prio[0].name) + '</div>');
+  var ag = agendaItems(), tk = todayKey(new Date());
+  ag.forEach(function(a){ if(a.date === tk && p.length < 6) p.push('<div class="info" data-act="sheet" data-k="agenda"><b>📅 ' + esc(a.heure || "Aujourd'hui") + '</b>' + esc(a.titre) + '</div>'); });
+  datesList().forEach(function(x){ if(x.n <= 2 && p.length < 6) p.push('<div class="info" data-act="page" data-p="maison"><b>' + (x.n === 0 ? '🎉 Aujourd\'hui' : x.n === 1 ? '⏳ Demain' : '⏳ Après-demain') + '</b>' + esc(x.titre) + '</div>'); });
+  if(h >= 16 && h < 21){ var pl = platDuJour(); if(pl.nom && (pl.ingredients || []).length && p.length < 6) p.push('<div class="info" data-act="sheet" data-k="plat"><b>🍽 Ce soir</b>' + esc(pl.nom) + '</div>'); }
+  if(!p.length) p.push('<div class="info ok">✓ Rien de particulier à signaler' + ($('ms').textContent ? ' · ' + esc($('ms').textContent) : '') + '</div>');
+  $('infos').innerHTML = p.join('');
+}
+
+/* ---------- raccourcis personnalisables (prévu pour accueillir plus tard d'autres modules, ex. domotique) ---------- */
+var SHORTCUTS = {
+  minuteur: {nom: 'Minuteur', ic: 'timer', k: 'k-or', sub: function(){ return tmRing ? 'Terminé !' : tmEnd ? tmLeft() : 'Lancer'; }, go: function(){ openSheet('minuteur'); }},
+  carbu: {nom: 'Gazole', ic: 'fuel', k: 'k-gr', sub: function(){ var b = bestPrix('gazole_prix'); return b ? prix(b.gazole_prix) : 'Prix du jour'; }, go: function(){ goPage('infos'); }},
+  meteo: {nom: 'Météo', ic: 'cloud', k: 'k-bl', sub: function(){ return $('mt').textContent !== '–' ? $('mt').textContent + ' · détails' : 'Détails'; }, go: function(){ goPage('infos'); }},
+  avenir: {nom: 'Dates', ic: 'gift', k: 'k-pu', sub: function(){ var l = datesList(); return l.length ? (l[0].n === 0 ? "Aujourd'hui" : 'J-' + l[0].n) + ' ' + l[0].titre : 'Ajouter'; }, go: function(){ goPage('maison'); }},
+  wifi: {nom: 'Wi-Fi invités', ic: 'wifi', k: 'k-bl', sub: function(){ return config && config.wifi && config.wifi.ssid ? 'QR code' : 'À régler'; }, go: function(){ openSheet('wifi'); }},
+  veille: {nom: 'Veille', ic: 'moon', k: 'k-pu', sub: function(){ return 'Éteindre l\'écran'; }, go: function(){ setTimeout(goVeille, 50); }},
+  menu: {nom: 'Ingrédients', ic: 'cart', k: 'k-or', sub: function(){ return 'Menu de la semaine'; }, go: function(){ openSheet('menu'); }},
+  mot: {nom: 'Petit mot', ic: 'note', k: 'k-ye', sub: function(){ return 'Écrire'; }, go: function(){ openSheet('mot'); }},
+  reglages: {nom: 'Réglages', ic: 'gear', k: '', sub: function(){ return 'Ville, Wi-Fi, veille'; }, go: function(){ goPage('reglages'); }}
+};
+var SC_DEFAUT = ['minuteur', 'carbu', 'meteo', 'avenir'];
+function scList(){ var l = loadJSON('ecran-raccourcis', null); if(!l || l.length !== 4) l = SC_DEFAUT.slice(); return l.map(function(k){ return SHORTCUTS[k] ? k : 'reglages'; }); }
+function renderShortcuts(){
+  var h = '';
+  scList().forEach(function(k){
+    var s = SHORTCUTS[k], sub = '';
+    try { sub = s.sub(); } catch(e){}
+    h += '<div class="sc ' + s.k + (k === 'minuteur' && tmRing ? ' ring' : '') + '" data-act="sc" data-sc="' + k + '"><div class="ic">' + ico(s.ic) + '</div><div><b>' + esc(s.nom) + '</b><span' + (k === 'minuteur' ? ' class="tmsc"' : '') + '>' + esc(sub) + '</span></div></div>';
+  });
+  $('shortcuts').innerHTML = h;
+}
+window.EcranMaison = { /* point d'entrée pour de futurs modules (domotique…) : rien n'est simulé ici */
+  addShortcut: function(key, def){ if(key && def && def.nom && typeof def.go === 'function'){ SHORTCUTS[key] = {nom: def.nom, ic: def.ic || 'home', k: def.k || '', sub: def.sub || function(){ return ''; }, go: def.go}; safe(renderShortcuts); } }
+};
 
 /* ---------- météo (Open-Meteo, sans clé) ---------- */
 var WMO = {0:'Ciel dégagé',1:'Plutôt dégagé',2:'Quelques nuages',3:'Couvert',45:'Brouillard',48:'Brouillard',51:'Bruine',53:'Bruine',55:'Bruine',61:'Pluie faible',63:'Pluie',65:'Forte pluie',66:'Pluie verglaçante',67:'Pluie verglaçante',71:'Neige faible',73:'Neige',75:'Forte neige',80:'Averses',81:'Averses',82:'Fortes averses',95:'Orages',96:'Orages',99:'Orages'};
@@ -257,10 +480,23 @@ function icon(c, day){
   if(c <= 2) return '⛅'; if(c === 3) return '☁️'; if(c <= 48) return '🌫️';
   if(c >= 71 && c <= 77) return '❄️'; if(c >= 95) return '⛈️'; return '🌧️';
 }
+function forecastHtml(m, n){
+  var fh = '', dd = m.daily, wmin = 99, wmax = -99; n = Math.min(n, dd.time.length);
+  for(var q = 0; q < n; q++){ wmin = Math.min(wmin, dd.temperature_2m_min[q]); wmax = Math.max(wmax, dd.temperature_2m_max[q]); }
+  var span = Math.max(1, wmax - wmin);
+  for(var k = 0; k < n; k++){
+    var dt = new Date(dd.time[k] + 'T12:00:00'), lo = dd.temperature_2m_min[k], hi = dd.temperature_2m_max[k];
+    var left = (lo - wmin) / span * 100, width = Math.max(6, (hi - lo) / span * 100);
+    fh += '<div class="fd"><span class="dn">' + (k === 0 ? 'Auj.' : JOURS[dt.getDay()].slice(0, 3) + '.') + '</span><span class="i">' + icon(dd.weather_code[k], true) + '</span>' +
+      '<span class="pp">' + (dd.precipitation_probability_max[k] >= 30 ? Math.round(dd.precipitation_probability_max[k]) + ' %' : '') + '</span>' +
+      '<span class="lo">' + Math.round(lo) + '°</span><span class="rb"><i style="left:' + left.toFixed(1) + '%;width:' + width.toFixed(1) + '%"></i></span><span class="hi">' + Math.round(hi) + '°</span></div>';
+  }
+  return fh;
+}
 function loadMeteo(){
   var ville = config && config.ville;
-  $('wcity').textContent = ville ? ville + (geo && geo.ville === ville && geo.cp ? ' (' + geo.cp.slice(0, 2) + ')' : '') : 'Météo';
-  if(!ville){ $('mt').textContent = '–'; $('ms').textContent = 'Ville à régler'; $('mc').textContent = ''; return; }
+  $('wcity').textContent = ville || 'Météo';
+  if(!ville){ $('mt').textContent = '–'; $('ms').textContent = 'Ville à régler dans Réglages'; $('mc').textContent = ''; return; }
   var p = (geo && geo.ville === ville) ? Promise.resolve(geo) :
     fetch('https://geocoding-api.open-meteo.com/v1/search?count=10&language=fr&countryCode=FR&name=' + encodeURIComponent(ville))
       .then(function(r){ return r.json(); })
@@ -275,63 +511,61 @@ function loadMeteo(){
       });
   p.then(function(g){
     $('wcity').textContent = ville + (g.cp ? ' (' + g.cp.slice(0, 2) + ')' : '');
-    if(!carbu || Date.now() - carbu.at.getTime() > 1800000) setTimeout(function(){ try { loadCarbu(); } catch(e){ $('carbul').innerHTML = '<div class="empty">Erreur : ' + esc(e.message) + '</div>'; } }, 10);
+    if(!carbu || Date.now() - carbu.at.getTime() > 1800000) setTimeout(function(){ safe(loadCarbu); }, 10);
     return fetch('https://api.open-meteo.com/v1/forecast?timezone=Europe%2FParis&forecast_days=7&latitude=' + g.lat + '&longitude=' + g.lon +
       '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code&hourly=precipitation_probability,temperature_2m,weather_code,wind_gusts_10m,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max,precipitation_sum&wind_speed_unit=kmh');
   }).then(function(r){ return r.json(); }).then(function(m){
     lastMeteo = m;
-    try { renderGel(m); } catch(e){}
-    try { renderAlertes(m); } catch(e){}
+    safe(function(){ renderGel(m); });
+    safe(function(){ renderAlertes(m); });
     var t = Math.round(m.current.temperature_2m), code = m.current.weather_code;
     $('mt').textContent = t + '°';
     $('mi').textContent = icon(code);
     var resume = (WMO[code] || '') + ' · max ' + Math.round(m.daily.temperature_2m_max[0]) + '°';
     var h = new Date().getHours(), pluie = null, hp = m.hourly.precipitation_probability;
     for(var i = h; i < 24 && i < hp.length; i++){ if(hp[i] >= 50){ pluie = i; break; } }
-    if(pluie !== null) resume = (pluie <= h ? 'Pluie en ce moment' : 'Pluie vers ' + pluie + 'h') + ' · max ' + Math.round(m.daily.temperature_2m_max[0]) + '°';
+    if(pluie !== null) resume = (pluie <= h ? 'Pluie en ce moment' : 'Pluie vers ' + pluie + ' h') + ' · max ' + Math.round(m.daily.temperature_2m_max[0]) + '°';
     $('ms').textContent = resume;
-    $('mc').textContent = pluie !== null ? 'Prends un parapluie' : (t <= 5 ? 'Couvre-toi bien' : '');
-    var c = m.current, d0 = m.daily, uv = Math.round(d0.uv_index_max[0] || 0);
+    $('mc').textContent = pluie !== null ? 'Prenez un parapluie' : (t <= 5 ? 'Couvrez-vous bien' : '');
+    var c = m.current, d0 = m.daily;
     $('wst').innerHTML =
       '<div><b>' + Math.round(c.apparent_temperature) + '°</b>Ressenti</div>' +
       '<div><b>' + Math.round(d0.temperature_2m_min[0]) + '° / ' + Math.round(d0.temperature_2m_max[0]) + '°</b>Min / max</div>' +
       '<div><b>' + Math.round(c.wind_speed_10m) + ' km/h</b>Vent' + (c.wind_gusts_10m >= 40 ? ', rafales ' + Math.round(c.wind_gusts_10m) : '') + '</div>' +
-      '<div><b>' + Math.round(d0.precipitation_probability_max[0] || 0) + ' %</b>Pluie' + (d0.precipitation_sum[0] >= 1 ? ' · ' + Math.round(d0.precipitation_sum[0]) + ' mm' : '') + '</div>' +
-      '<div><b>' + Math.round(c.relative_humidity_2m) + ' %</b>Humidité</div>' +
-      '<div><b>' + uv + '</b>UV ' + (uv <= 2 ? 'faible' : uv <= 5 ? 'modéré' : uv <= 7 ? 'élevé' : 'très élevé') + '</div>';
-    var hh = '', ht = m.hourly.temperature_2m, hc = m.hourly.weather_code;
-    for(var j = h + 1; j <= h + 5 && j < ht.length; j++){
-      hh += '<div>' + (j % 24) + 'h<div class="hi">' + icon(hc[j], (j % 24) >= 7 && (j % 24) < 19) + '</div>' + Math.round(ht[j]) + '°</div>';
-    }
-    $('whr').innerHTML = hh;
-    var fh = '', dd = m.daily, n = Math.min(7, dd.time.length), wmin = 99, wmax = -99;
-    for(var q = 0; q < n; q++){ wmin = Math.min(wmin, dd.temperature_2m_min[q]); wmax = Math.max(wmax, dd.temperature_2m_max[q]); }
-    var span = Math.max(1, wmax - wmin);
-    for(var k = 0; k < n; k++){
-      var dt = new Date(dd.time[k] + 'T12:00:00'), lo = dd.temperature_2m_min[k], hi = dd.temperature_2m_max[k];
-      var left = (lo - wmin) / span * 100, width = Math.max(6, (hi - lo) / span * 100);
-      fh += '<div class="fd"><span class="dn">' + (k === 0 ? 'Auj.' : JOURS[dt.getDay()].slice(0, 3) + '.') + '</span><span class="i">' + icon(dd.weather_code[k], true) + '</span>' +
-        '<span class="pp">' + (dd.precipitation_probability_max[k] >= 30 ? Math.round(dd.precipitation_probability_max[k]) + ' %' : '') + '</span>' +
-        '<span class="lo">' + Math.round(lo) + '°</span><span class="rb"><i style="left:' + left.toFixed(1) + '%;width:' + width.toFixed(1) + '%"></i></span><span class="hi">' + Math.round(hi) + '°</span></div>';
-    }
-    $('fc').innerHTML = fh;
-    $('sun').textContent = '☀︎ Lever ' + String(dd.sunrise[0]).slice(11, 16) + ' · Coucher ' + String(dd.sunset[0]).slice(11, 16);
-  }).catch(function(e){ $('ms').textContent = e && e.message === 'ville' ? 'Ville introuvable' : 'Météo indisponible'; });
+      '<div><b>' + Math.round(d0.precipitation_probability_max[0] || 0) + ' %</b>Pluie' + (d0.precipitation_sum[0] >= 1 ? ' · ' + Math.round(d0.precipitation_sum[0]) + ' mm' : '') + '</div>';
+    $('fc').innerHTML = forecastHtml(m, 7);
+    safe(renderInfos); safe(renderShortcuts);
+    if(curPage === 'infos') safe(renderMeteoDetail);
+  }).catch(function(e){ $('ms').textContent = e && e.message === 'ville' ? 'Ville introuvable' : 'Météo indisponible pour le moment'; });
 }
-
+function meteoDetailHtml(){
+  var m = lastMeteo; if(!m) return '<div class="empty">Chargement de la météo…</div>';
+  var now = new Date().getHours(), d = m.daily, c = m.current, uv = Math.round(d.uv_index_max[0] || 0), h = '';
+  h += '<div class="ch"><div class="ic">' + ico('cloud') + '</div><h3>' + esc($('wcity').textContent) + '</h3><span class="meta">mise à jour ' + pad(new Date().getHours()) + ':' + pad(new Date().getMinutes()) + '</span></div>';
+  h += '<div class="wnow"><div><div class="wt" style="font-size:72px">' + Math.round(c.temperature_2m) + '°</div><div class="ws">' + esc($('ms').textContent) + '</div><div class="wc">' + esc($('mc').textContent) + '</div></div><div class="wi" style="font-size:70px">' + icon(c.weather_code) + '</div></div>';
+  h += '<div class="stats big3">' + $('wst').innerHTML + '<div><b>' + Math.round(c.relative_humidity_2m) + ' %</b>Humidité</div><div><b>' + uv + '</b>UV ' + (uv <= 2 ? 'faible' : uv <= 5 ? 'modéré' : uv <= 7 ? 'élevé' : 'très élevé') + '</div><div><b>' + String(d.sunrise[0]).slice(11, 16) + ' · ' + String(d.sunset[0]).slice(11, 16) + '</b>Lever · coucher</div></div>';
+  h += '<div class="shead" style="color:#9fb0cf">Heure par heure</div><div class="hscroll">';
+  for(var j = now; j < now + 24 && j < m.hourly.temperature_2m.length; j++){
+    var hr = j % 24;
+    h += '<div><div>' + (j === now ? 'Maint.' : hr + ' h') + '</div><div class="hi">' + icon(m.hourly.weather_code[j], hr >= 7 && hr < 19) + '</div><div><b>' + Math.round(m.hourly.temperature_2m[j]) + '°</b></div><div class="pp">' + (m.hourly.precipitation_probability[j] >= 20 ? m.hourly.precipitation_probability[j] + ' %' : '') + '</div></div>';
+  }
+  h += '</div><div class="shead" style="color:#9fb0cf">7 jours</div>' + forecastHtml(m, 7);
+  return h;
+}
+function renderMeteoDetail(){ $('i-meteo').innerHTML = meteoDetailHtml(); }
 
 /* ---------- carburant (prix-carburants.gouv.fr, données ouvertes) ---------- */
 var carbu = null, CARBUS = [['gazole_prix', 'Gazole'], ['e10_prix', 'SP95-E10'], ['sp95_prix', 'SP95'], ['sp98_prix', 'SP98']];
 function distKm(a, b, c, d){ var R = 6371, x = (c - a) * Math.PI / 180, y = (d - b) * Math.PI / 180, q = Math.sin(x / 2) * Math.sin(x / 2) + Math.cos(a * Math.PI / 180) * Math.cos(c * Math.PI / 180) * Math.sin(y / 2) * Math.sin(y / 2); return R * 2 * Math.atan2(Math.sqrt(q), Math.sqrt(1 - q)); }
 function prix(n){ return n.toFixed(3).replace('.', ',') + ' €'; }
 function cap(s){ s = String(s || '').toLowerCase(); return s.replace(/(^|[\s-])\S/g, function(m){ return m.toUpperCase(); }); }
+function bestPrix(f){ if(!carbu) return null; return carbu.stations.filter(function(x){ return x[f]; }).sort(function(a, b){ return a[f] - b[f]; })[0] || null; }
 function carbuQuery(where, ds, offset){
   ds = ds || 'prix-des-carburants-en-france-flux-instantane-v2';
   return fetch('https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/' + ds + '/records?limit=100' + (offset ? '&offset=' + offset : '') + (where ? '&where=' + encodeURIComponent(where) : ''))
     .then(function(r){ return r.json(); })
     .then(function(d){ if(!d || !d.results) throw new Error((d && (d.message || d.error_code)) || 'réponse vide'); d.results.total = d.total_count; return d.results; });
 }
-/* le flux quotidien a une ligne par carburant : on regroupe par station */
 var FUELMAP = {'gazole': 'gazole_prix', 'e10': 'e10_prix', 'sp95': 'sp95_prix', 'sp98': 'sp98_prix'};
 function groupLong(r){
   if(!r.length || r[0].prix_nom == null) return r;
@@ -361,10 +595,10 @@ function normStation(x){
   return x;
 }
 function loadCarbu(){
-  try { $('carbul').innerHTML = '<div class="empty">Recherche des stations…</div>'; } catch(e){}
-  if(!geo){ $('carbul').innerHTML = '<div class="empty">Règle ta ville dans Réglages</div>'; return; }
+  if(!geo){ $('carbul').innerHTML = '<div class="empty">Réglez votre ville dans Réglages</div>'; return; }
+  if(!carbu) $('carbul').innerHTML = '<div class="empty">Recherche des stations…</div>';
   var pt = "geom'POINT(" + geo.lon + ' ' + geo.lat + ")'", diag = [];
-  var norm = function(t){ return String(t || '').toLowerCase().normalize ? String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, '') : String(t || '').toLowerCase().replace(/[^a-z]/g, ''); };
+  var norm = function(t){ return normTxt(t).replace(/[^a-z]/g, ''); };
   var keep = function(r){ return r.filter(function(x){ return x.km != null ? x.km <= 15 : norm(x.ville) === norm(geo.ville); }); };
   var dep = geo.cp ? geo.cp.slice(0, geo.cp.indexOf('97') === 0 ? 3 : 2) : '';
   var steps = [
@@ -383,40 +617,34 @@ function loadCarbu(){
   var attempt = function(i){
     if(i >= steps.length) return Promise.resolve([]);
     return steps[i]().then(function(r){
-      var total = r.total, raw = r.length, rawFirst = r[0] ? {geom: r[0].geom, latitude: r[0].latitude, longitude: r[0].longitude, ville: r[0].ville} : {};
+      var total = r.total, rawN = r.length;
       r = keep(groupLong(r).map(normStation));
-      diag.push('essai ' + (i + 1) + ' : ' + raw + '/' + total + ' → ' + r.length);
-      if(raw && !r.length) diag.push('ex. : ' + JSON.stringify(rawFirst).slice(0, 220));
+      diag.push('essai ' + (i + 1) + ' : ' + rawN + '/' + total + ' → ' + r.length);
       return r.length ? r : attempt(i + 1);
     }, function(e){ diag.push('essai ' + (i + 1) + ' : erreur ' + e.message); return attempt(i + 1); });
   };
   attempt(0).then(function(st){
     carbuDiag = diag.join(' · ');
-    if(st[0]) carbuDiag += ' · champs : ' + Object.keys(st[0]).slice(0, 40).join(', ');
     carbu = {stations: st, at: new Date()};
-    var h = '';
-    CARBUS.forEach(function(c){
-      var best = st.filter(function(x){ return x[c[0]]; }).sort(function(a, b){ return a[c[0]] - b[c[0]]; })[0];
-      if(best) h += '<div class="cr"><span class="cn">' + c[1] + '</span><span class="cp">' + prix(best[c[0]]) + '</span><span class="cw">' + esc(cap(best.ville)) + (best.km != null ? ' · ' + best.km.toFixed(1).replace('.', ',') + ' km' : '') + '</span></div>';
-    });
-    $('carbul').innerHTML = h || '<div class="empty">Aucune station trouvée autour de ' + esc(geo.ville) + '</div><div class="sub" style="font-size:11px;margin-top:6px">Détail : ' + esc(carbuDiag.slice(0, 300)) + '</div>';
-    if(sheetKind === 'carbu') $('sheetbody').innerHTML = carbuSheet();
-  }).catch(function(e){ $('carbul').innerHTML = '<div class="empty">Prix indisponibles</div><div class="sub" style="font-size:11px;margin-top:6px">Détail : ' + esc(String(e && e.message || e)) + '</div>'; });
+    $('carbuat').textContent = 'à ' + pad(carbu.at.getHours()) + ':' + pad(carbu.at.getMinutes());
+    $('carbul').innerHTML = carbuHtml();
+    safe(renderShortcuts);
+  }).catch(function(e){ if(!carbu) $('carbul').innerHTML = '<div class="empty">Prix indisponibles pour le moment</div><div class="sub" style="font-size:13px;margin-top:6px">' + esc(String(e && e.message || e)) + '</div>'; });
 }
-function carbuSheet(){
+function carbuHtml(){
   if(!carbu) return '<div class="empty">Chargement des prix…</div>';
-  var h = '<div class="sub">Les moins chers à moins de 10 km · données prix-carburants.gouv.fr · ' + pad(carbu.at.getHours()) + ':' + pad(carbu.at.getMinutes()) + '</div>';
-  if(!carbu.stations.length) h += '<div class="sub" style="font-size:12px;margin-top:10px">Diagnostic : ' + esc(carbuDiag) + '</div>';
+  if(!carbu.stations.length) return '<div class="empty">Aucune station trouvée autour de ' + esc(geo.ville) + '</div><div class="sub" style="font-size:13px;margin-top:10px">Détail : ' + esc(carbuDiag) + '</div>';
+  var h = '';
   CARBUS.forEach(function(c){
-    var l = carbu.stations.filter(function(x){ return x[c[0]]; }).sort(function(a, b){ return a[c[0]] - b[c[0]]; }).slice(0, 5);
+    var l = carbu.stations.filter(function(x){ return x[c[0]]; }).sort(function(a, b){ return a[c[0]] - b[c[0]]; }).slice(0, c[0] === 'gazole_prix' ? 4 : 3);
     if(!l.length) return;
     h += '<div class="shead">' + c[1] + '</div>';
     l.forEach(function(x){
       var g = x.geom || {};
-      h += '<a class="crow" href="https://maps.apple.com/?q=' + encodeURIComponent(cap(x.adresse) + ', ' + cap(x.ville)) + (g.lat != null ? '&ll=' + g.lat + ',' + g.lon : '') + '" target="_blank" rel="noopener"><span class="cp">' + prix(x[c[0]]) + '</span><span style="flex:1;min-width:0">' + esc(cap(x.adresse)) + '<br><span class="sub">' + esc(cap(x.ville)) + (x.km != null ? ' · ' + x.km.toFixed(1).replace('.', ',') + ' km' : '') + '</span></span><span class="sub">Itinéraire ›</span></a>';
+      h += '<a class="crow" href="https://maps.apple.com/?q=' + encodeURIComponent(cap(x.adresse) + ', ' + cap(x.ville)) + (g.lat != null ? '&ll=' + g.lat + ',' + g.lon : '') + '" target="_blank" rel="noopener"><span class="cp">' + prix(x[c[0]]) + '</span><span style="flex:1;min-width:0">' + esc(cap(x.adresse)) + '<br><span class="sub">' + esc(cap(x.ville)) + (x.km != null ? ' · ' + x.km.toFixed(1).replace('.', ',') + ' km' : '') + '</span></span><span class="ib">' + ico('chev') + '</span></a>';
     });
   });
-  return h;
+  return h + '<div class="sub" style="font-size:13px;margin-top:12px">Stations à moins de 15 km · prix-carburants.gouv.fr · touchez une station pour l\'itinéraire</div>';
 }
 
 /* ---------- Wi-Fi invités ---------- */
@@ -428,91 +656,73 @@ function wifiQr(w, cell){
   q.make();
   return q.createSvgTag(cell || 4, 0);
 }
-function renderWifi(){
-  if(!$('wifiw')) return;
-  var w = config && config.wifi;
-  if(!w || !w.ssid){ $('wifiw').innerHTML = '<div class="empty">Ajoute ton Wi-Fi dans Réglages, en bas de la page</div>'; return; }
-  var svg = wifiQr(w, 4);
-  $('wifiw').innerHTML = (svg ? '<div class="qr">' + svg + '</div>' : '') + '<div class="wn">' + esc(w.ssid) + '</div><div class="wp">' + (w.type === 'nopass' ? 'Sans mot de passe' : 'Scanne avec l\'appareil photo') + '</div>';
-}
 
-/* ---------- alerte gel et pare-brise ---------- */
+/* ---------- alertes gel, vent et pluie ---------- */
 function renderGel(m){
-  var el = $('gel'), now = new Date(), h = now.getHours(), ht = m.hourly.temperature_2m, msg = '';
+  var now = new Date(), h = now.getHours(), ht = m.hourly.temperature_2m, msg = '';
   var minRange = function(a, b){ var mn = 99, at = -1; for(var i = a; i <= b && i < ht.length; i++){ if(ht[i] < mn){ mn = ht[i]; at = i; } } return {t: mn, h: at % 24}; };
   if(h >= 15){
     var n = minRange(h + 1, 24 + 9);
-    if(n.t <= 0) msg = '<b>❄︎ Gel cette nuit</b> ' + Math.round(n.t) + '° vers ' + n.h + ' h · pense à couvrir le pare-brise';
-    else if(n.t <= 3) msg = '<b>❄︎ Risque de givre cette nuit</b> ' + Math.round(n.t) + '° au plus bas · pare-brise à prévoir demain matin';
+    if(n.t <= 0) msg = '<b>❄︎ Gel cette nuit</b>' + Math.round(n.t) + '° vers ' + n.h + ' h · couvrez le pare-brise';
+    else if(n.t <= 3) msg = '<b>❄︎ Givre possible cette nuit</b>' + Math.round(n.t) + '° au plus bas';
   } else if(h >= 4 && h < 11){
     var mo = minRange(Math.max(0, h - 6), h);
-    if(mo.t <= 0 || m.current.temperature_2m <= 1) msg = '<b>❄︎ Gel ce matin</b> ' + Math.round(Math.min(mo.t, m.current.temperature_2m)) + '° · prévois 5 minutes pour dégivrer la voiture';
-    else if(mo.t <= 3) msg = '<b>❄︎ Givre possible ce matin</b> ' + Math.round(mo.t) + '° au plus bas · jette un œil au pare-brise';
+    if(mo.t <= 0 || m.current.temperature_2m <= 1) msg = '<b>❄︎ Gel ce matin</b>' + Math.round(Math.min(mo.t, m.current.temperature_2m)) + '° · 5 min pour dégivrer';
+    else if(mo.t <= 3) msg = '<b>❄︎ Givre possible ce matin</b>' + Math.round(mo.t) + '° au plus bas';
   }
-  if(msg){ el.innerHTML = msg; el.className = 'gel'; } else el.className = 'gel hide';
+  infoState.gel = msg;
 }
-
-/* ---------- alertes vent et pluie en direct (6 prochaines heures) ---------- */
 function renderAlertes(m){
-  var el = $('alerte'); if(!el) return;
   var h = new Date().getHours(), H = m.hourly, g = H.wind_gusts_10m || [], p = H.precipitation || [];
   var mg = 0, mgh = -1, mp = 0, mph = -1;
   for(var i = h; i <= h + 6 && i < g.length; i++){ if(g[i] > mg){ mg = g[i]; mgh = i; } if(p[i] > mp){ mp = p[i]; mph = i; } }
   var msgs = [];
-  if(mg >= 60) msgs.push('<b>💨 Rafales jusqu\'à ' + Math.round(mg) + ' km/h</b> ' + (mgh <= h ? 'en ce moment' : 'vers ' + (mgh % 24) + ' h'));
-  if(mp >= 3) msgs.push('<b>🌧 Grosse averse</b> ' + (mph <= h ? 'en ce moment' : 'vers ' + (mph % 24) + ' h') + ' · ' + Math.round(mp) + ' mm en une heure');
-  el.innerHTML = msgs.join('<br>');
-  el.className = msgs.length ? 'alerte' : 'alerte hide';
+  if(mg >= 60) msgs.push('<b>💨 Rafales ' + Math.round(mg) + ' km/h</b>' + (mgh <= h ? 'en ce moment' : 'vers ' + (mgh % 24) + ' h'));
+  if(mp >= 3) msgs.push('<b>🌧 Grosse averse</b>' + (mph <= h ? 'en ce moment' : 'vers ' + (mph % 24) + ' h') + ' · ' + Math.round(mp) + ' mm/h');
+  infoState.alertes = msgs;
 }
 
 /* ---------- petit mot ---------- */
-var motTimer = null, motFocus = false;
+var mot = {};
 function watchMot(){
   root.child('mot').on('value', function(s){
-    var v = s.val() || {};
-    if(!motFocus) $('mot').value = v.texte || '';
-    if(v.at){ var d = new Date(v.at); $('motup').textContent = (d.toDateString() === new Date().toDateString() ? '' : d.getDate() + '/' + (d.getMonth() + 1) + ' ') + pad(d.getHours()) + ':' + pad(d.getMinutes()); } else $('motup').textContent = '';
+    mot = s.val() || {};
+    var t = (mot.texte || '').trim(), el = $('mottx');
+    el.textContent = t || 'Touchez pour laisser un mot';
+    cls(el, 'vide', !t);
+    if(mot.at && t){ var d = new Date(mot.at); $('motup').textContent = (mot.de ? mot.de + ' · ' : '') + (d.toDateString() === new Date().toDateString() ? '' : d.getDate() + '/' + (d.getMonth() + 1) + ' ') + hm(mot.at); } else $('motup').textContent = '';
   });
-  $('mot').addEventListener('focus', function(){ motFocus = true; });
-  $('mot').addEventListener('blur', function(){ motFocus = false; saveMot(); });
-  $('mot').addEventListener('input', function(){ clearTimeout(motTimer); motTimer = setTimeout(saveMot, 900); });
 }
-function saveMot(){ clearTimeout(motTimer); root.child('mot').set({texte: $('mot').value.slice(0, 500), at: Date.now()}).catch(function(){ status('Mot non enregistré'); }); }
+function saveMot(texte, de){
+  var prev = {texte: mot.texte || '', at: mot.at || 0, de: mot.de || ''};
+  var v = {texte: String(texte || '').slice(0, 500), at: Date.now(), de: de || ''};
+  return root.child('mot').set(v).then(function(){
+    if(!v.texte && prev.texte) toast('Mot effacé', function(){ root.child('mot').set(prev); });
+    else toast('Mot enregistré');
+  }, function(){ toast('Mot non enregistré, réessayez'); });
+}
 
-/* ---------- à venir ---------- */
+/* ---------- dates à venir ---------- */
 var dates = [];
 function renderDates(){
-  var today = new Date(); today.setHours(0, 0, 0, 0);
-  var list = dates.map(function(x){ var d = new Date(x.date + 'T00:00:00'); return {id: x.id, titre: x.titre, n: Math.round((d - today) / 86400000)}; })
-    .filter(function(x){ return !isNaN(x.n) && x.n >= 0; }).sort(function(a, b){ return a.n - b.n; });
-  if(!list.length){ $('dates').innerHTML = '<div class="empty">Ajoute une date à attendre : vacances, anniversaire…</div>'; return; }
-  var h = '';
-  list.slice(0, 5).forEach(function(x){
-    h += '<div class="row"><div class="n">' + (x.n === 0 ? '🎉' : x.n) + '<small>' + (x.n === 0 ? "aujourd'hui" : (x.n === 1 ? 'jour' : 'jours')) + '</small></div><div class="tx">' + esc(x.titre) + '</div><button class="x" type="button" data-del="' + esc(x.id) + '" aria-label="Supprimer">×</button></div>';
+  var list = datesList(), h = '';
+  list.forEach(function(x){
+    h += '<div class="ev"><div class="d">' + evDate(x.date) + '</div><div class="x c">' + esc(x.titre) + '<span>' + (x.n === 0 ? "C'est aujourd'hui 🎉" : x.n === 1 ? 'Demain' : 'Dans ' + x.n + ' jours') + '</span></div>' +
+      '<button type="button" class="ib" data-act="edit" data-col="dates" data-id="' + esc(x.id) + '" aria-label="Modifier">' + ico('edit') + '</button><button type="button" class="ib" data-act="del" data-col="dates" data-ids="' + esc(x.id) + '" aria-label="Supprimer">' + ico('trash') + '</button></div>';
   });
-  $('dates').innerHTML = h;
+  $('dates').innerHTML = h || '<div class="empty">Ajoutez une date à attendre : vacances, anniversaire…</div>';
+  safe(renderEvents); safe(renderInfos); safe(renderShortcuts);
 }
 function watchDates(){
   root.child('dates').on('value', function(s){
-    var v = s.val() || {}; dates = [];
+    var v = s.val() || {}; dates = []; raw.dates = v;
     for(var id in v){ if(v.hasOwnProperty(id) && v[id]) dates.push({id: id, titre: v[id].titre || '', date: v[id].date || ''}); }
     renderDates();
-  });
-  $('dates').addEventListener('click', function(e){
-    var id = e.target.getAttribute && e.target.getAttribute('data-del');
-    if(id) root.child('dates/' + id).remove();
-  });
-  $('df').addEventListener('submit', function(e){
-    e.preventDefault();
-    var t = $('dt').value.trim(), d = $('dd').value;
-    if(!t || !/^\d{4}-\d{2}-\d{2}$/.test(d)){ $('dt').placeholder = 'Titre et date, s’il te plaît'; return; }
-    $('dt').value = ''; $('dd').value = '';
-    root.child('dates').push({titre: t.slice(0, 60), date: d}).catch(function(){ status('Date non enregistrée'); });
   });
 }
 
 /* ---------- minuteur ---------- */
-var tmEnd = 0, tmInt = null, actx = null;
+var tmEnd = 0, tmInt = null, actx = null, tmRing = false;
 function beep(){
   if(!actx) return;
   for(var i = 0; i < 3; i++){
@@ -522,333 +732,422 @@ function beep(){
     o.start(t0); o.stop(t0 + 0.35);
   }
 }
+function tmLeft(){ var left = Math.max(0, Math.round((tmEnd - Date.now()) / 1000)); return pad(Math.floor(left / 60)) + ':' + pad(left % 60); }
 function tmShow(){
-  var left = Math.max(0, Math.round((tmEnd - Date.now()) / 1000));
-  $('tmv').textContent = pad(Math.floor(left / 60)) + ':' + pad(left % 60);
-  if(tmEnd && left === 0){ clearInterval(tmInt); tmInt = null; tmEnd = 0; $('tmw').className = 'w tm ring'; beep(); setTimeout(beep, 2000); }
-}
-function bindTimer(){
-  var bs = document.querySelectorAll('[data-min]');
-  for(var i = 0; i < bs.length; i++){
-    bs[i].addEventListener('click', function(e){
-      try { if(!actx){ var AC = window.AudioContext || window.webkitAudioContext; if(AC) actx = new AC(); } if(actx && actx.resume) actx.resume(); } catch(err){}
-      tmEnd = Date.now() + parseInt(e.target.getAttribute('data-min'), 10) * 60000;
-      $('tmw').className = 'w tm';
-      clearInterval(tmInt); tmInt = setInterval(tmShow, 1000); tmShow();
-    });
+  var txt = tmEnd ? tmLeft() : '00:00';
+  $$('.tmv').forEach(function(el){ el.textContent = txt; });
+  $$('.tmv0').forEach(function(el){ el.textContent = txt; });
+  $$('.tmsc').forEach(function(el){ el.textContent = tmRing ? 'Terminé !' : tmEnd ? txt : 'Lancer'; });
+  $$('.tmw').forEach(function(el){ cls(el, 'ring', tmRing); });
+  if(tmEnd && Date.now() >= tmEnd){
+    clearInterval(tmInt); tmInt = null; tmEnd = 0; tmRing = true;
+    lastTouch = Date.now(); forced = false; wakeUntil = Date.now() + 300000;
+    beep(); setTimeout(beep, 2000); setTimeout(beep, 4000);
+    toast('⏱ Minuteur terminé');
+    safe(renderInfos); safe(renderShortcuts); tmShow();
   }
-  $('tmstop').addEventListener('click', function(){ clearInterval(tmInt); tmInt = null; tmEnd = 0; $('tmw').className = 'w tm'; $('tmv').textContent = '00:00'; });
 }
+function tmStart(min){
+  try { if(!actx){ var AC = window.AudioContext || window.webkitAudioContext; if(AC) actx = new AC(); } if(actx && actx.resume) actx.resume(); } catch(err){}
+  tmRing = false;
+  tmEnd = (tmEnd && min === 1 ? tmEnd : Date.now()) + min * 60000;
+  clearInterval(tmInt); tmInt = setInterval(tmShow, 1000); tmShow();
+  safe(renderInfos); safe(renderShortcuts);
+}
+function tmStop(){ clearInterval(tmInt); tmInt = null; tmEnd = 0; tmRing = false; tmShow(); safe(renderInfos); safe(renderShortcuts); }
+function tmButtons(){ return [5, 10, 15, 20, 30, 45, 60].map(function(m){ return '<button type="button" class="b sm" data-act="tm" data-min="' + m + '">' + (m === 60 ? '1 h' : m + ' min') + '</button>'; }).join('') + '<button type="button" class="b sm" data-act="tm" data-min="1">+1 min</button><button type="button" class="b sm danger" data-act="tmstop">Arrêter</button>'; }
 
-
-/* ---------- widgets cliquables : vue détaillée ---------- */
-var menuSel = {};
+/* ---------- vues détaillées (feuilles) ---------- */
+var menuSel = {}, curIng = [], sheetKind = null;
 function menuIngHtml(menu){
   var list = [], heads = {};
   menu.forEach(function(mm){ if(menuSel[mm.date] && (mm.ingredients || []).length){ heads[list.length] = mm.nom; list = list.concat(mm.ingredients); } });
-  if(!list.length) return '<div class="empty" style="margin-top:14px">Aucune recette cochée pour l\'instant.</div>';
+  if(!list.length) return '<div class="empty" style="margin-top:14px">Cochez une ou plusieurs recettes pour voir leurs ingrédients.</div>';
   var h = ingHtml(list).replace('<div class="shead">Ingrédients</div>', '<div class="shead">Ingrédients des recettes cochées</div>');
   var idx = 0;
   h = h.replace(/<div class="row ing/g, function(m){ return (heads.hasOwnProperty(idx) ? '<div class="ihead">' + esc(heads[idx]) + '</div>' : '') + (idx++, m); });
   return h;
 }
-var curIng = [];
 function ingHtml(ing){
   curIng = ing || [];
   if(!curIng.length) return '';
-  var have = {}; lists.courses.forEach(function(x){ if(!x.done) have[x.name.toLowerCase()] = 1; });
-  var h = '<div class="shead">Ingrédients</div><div class="list big-list" id="ingl">';
+  var have = {}; lists.courses.forEach(function(x){ if(!x.done) have[normTxt(x.name)] = 1; });
+  var h = '<div class="shead">Ingrédients</div><div id="ingl">';
   curIng.forEach(function(x, i){
-    var staple = /^(sel|poivre|sel, poivre|huile|huile d'olive|eau)\b/i.test(x), on = !staple && !have[x.toLowerCase()];
-    h += '<div class="row ing' + (on ? ' sel' : '') + '" data-ing="' + i + '"><span class="box">' + (on ? '✓' : '') + '</span>' + esc(x) + (have[x.toLowerCase()] ? '<span class="reptag">déjà dans la liste</span>' : '') + '</div>';
+    var staple = /^(sel|poivre|sel, poivre|huile|huile d'olive|eau)\b/i.test(x), deja = have[normTxt(x)], on = !staple && !deja;
+    h += '<div class="row ing' + (on ? ' sel' : '') + '" data-ing="' + i + '">' + boxHtml(on) + '<span class="nm">' + esc(x) + '</span>' + (deja ? '<span class="tag r">déjà dans la liste</span>' : '') + '</div>';
   });
-  return h + '</div><button class="main" type="button" id="ingadd" style="width:100%;margin-top:14px;padding:13px">Ajouter à la liste de courses</button><div class="sub" id="ingmsg" style="text-align:center;margin-top:8px">Décoche ce que tu as déjà à la maison.</div>';
+  return h + '</div><button class="b pri full" type="button" id="ingadd" style="margin-top:14px;height:52px">Ajouter</button><div class="sub" id="ingmsg" style="text-align:center;margin-top:8px">Décochez ce que vous avez déjà à la maison.</div>';
 }
-var sheetKind = null;
 function closeSheet(){ sheetKind = null; show('sheet', false); document.body.style.overflow = ''; }
-function rowsHtml(name){
-  if(name === 'courses') return coursesHtml(lists.courses);
-  var items = lists[name], h = '';
-  if(!items.length) return '<div class="empty">' + (name === 'courses' ? 'Rien à acheter' : 'Rien à faire') + '</div>';
-  for(var i = 0; i < items.length; i++){
-    var it = items[i];
-    h += '<div class="row' + (it.done ? ' done' : '') + '" data-col="' + name + '" data-id="' + esc(it.id) + '"><span class="box">' + (it.done ? '✓' : '') + '</span><span style="flex:1">' + esc(it.name) + '</span>' +
-      (it.rep != null ? '<span class="reptag">↻ ' + JOURS[it.rep].toLowerCase() + '</span><button class="x" type="button" data-delt="' + esc(it.id) + '" aria-label="Supprimer">×</button>' : '') + '</div>';
-  }
-  return h;
-}
-function openSheet(kind){
-  var t = '', h = '', cls = '';
-  if(kind === 'meteo' && lastMeteo){
-    var m = lastMeteo, now = new Date().getHours(), d = m.daily;
-    t = (config && config.ville) || 'Météo'; cls = 'wx';
-    h += '<div class="sbig">' + Math.round(m.current.temperature_2m) + '° <span>' + icon(m.current.weather_code) + '</span></div>';
-    h += '<div class="ssub">' + esc($('ms').textContent) + '</div>';
-    h += '<div class="stats sheetstats">' + $('wst').innerHTML + '<div><b>' + String(d.sunrise[0]).slice(11, 16) + '</b>Lever</div><div><b>' + String(d.sunset[0]).slice(11, 16) + '</b>Coucher</div></div>';
-    h += '<div class="shead">Heure par heure</div><div class="hscroll">';
-    for(var j = now; j < now + 24 && j < m.hourly.temperature_2m.length; j++){
-      var hr = j % 24;
-      h += '<div><div>' + (j === now ? 'Maint.' : hr + 'h') + '</div><div class="hi">' + icon(m.hourly.weather_code[j], hr >= 7 && hr < 19) + '</div><div><b>' + Math.round(m.hourly.temperature_2m[j]) + '°</b></div><div class="pp">' + (m.hourly.precipitation_probability[j] >= 20 ? m.hourly.precipitation_probability[j] + ' %' : '') + '</div></div>';
-    }
-    h += '</div><div class="shead">Cette semaine</div><div class="fc">' + $('fc').innerHTML + '</div>';
-  } else if(kind === 'agenda'){
-    t = 'Agenda'; var ag = (jour && jour.agenda) || [];
-    if(!ag.length) h = '<div class="empty">' + (jour && jour.agenda_relie ? 'Aucun rendez-vous aujourd\'hui ni demain' : 'Agenda pas encore relié') + '</div>';
-    var tk = todayKey(new Date()), last = '';
+function openSheet(kind, opt){
+  var t = '', h = '';
+  if(kind === 'agenda'){
+    t = 'À venir'; var ag = agendaItems(), tk = todayKey(new Date()), last = '';
+    if(!ag.length) h += '<div class="empty">' + (jour && jour.agenda_relie ? 'Aucun rendez-vous aujourd\'hui ni demain dans le calendrier partagé' : 'Agenda pas encore relié') + '</div>';
     ag.forEach(function(a){
       if(a.date !== last){ last = a.date; h += '<div class="shead">' + (a.date === tk ? "Aujourd'hui" : 'Demain') + '</div>'; }
       h += '<div class="arow"><span class="ah">' + esc(a.heure || 'Journée') + '</span>' + esc(a.titre) + '</div>';
     });
-  } else if(kind === 'courses' || kind === 'taches'){
-    t = kind === 'courses' ? 'Courses' : 'Maison'; cls = 'rem ' + (kind === 'courses' ? 'or' : 'bl');
-    h = '<div class="list big-list">' + rowsHtml(kind) + '</div><form class="sadd" data-col="' + kind + '"><input placeholder="Ajouter…" autocomplete="off">' +
-        (kind === 'taches' ? '<select id="srep"><option value="">Une fois</option>' + [1,2,3,4,5,6,0].map(function(d){ return '<option value="' + d + '">Chaque ' + JOURS[d].toLowerCase() + '</option>'; }).join('') + '</select>' : '') +
-        '<button class="main" type="submit">Ajouter</button></form>' +
-        (kind === 'taches' ? '<div class="sub" style="margin-top:8px">Une tâche « chaque mardi » n’apparaît sur l’écran que le mardi, et revient toute seule la semaine suivante.</div>' : '') +
-        '<div style="text-align:right;margin-top:12px"><button class="link" type="button" data-clear2="' + kind + '">Retirer ' + (kind === 'courses' ? 'les cochés' : 'les faites') + '</button></div>' +
-        (kind === 'courses' ? '<div class="shead">Souvent achetés</div><div class="chips" id="schips"></div>' : '');
+    var dl = datesList();
+    h += '<div class="shead">Dates à attendre</div>' + (dl.length ? dl.map(function(x){ return '<div class="arow"><span class="ah" style="color:var(--or)">' + (x.n === 0 ? '🎉' : 'J-' + x.n) + '</span>' + esc(x.titre) + '</div>'; }).join('') : '<div class="empty">Aucune</div>');
+    h += '<div style="margin-top:16px"><button type="button" class="b" data-act="page" data-p="maison">Gérer les dates</button></div>';
   } else if(kind === 'plat'){
     var p = platDuJour(), ing = p.ingredients || [];
     t = 'Ce soir';
-    h = '<div class="splat">' + ($('pimg').innerHTML) + '</div><div class="pn" style="font-size:28px;margin-top:14px">' + esc(p.nom || 'En attente de la suggestion du jour') + '</div><div class="ssub">' + esc($('pd').textContent) + (p.portions ? ' · ' + p.portions + ' pers.' : '') + '</div>';
-    if(p.url) h += '<a class="btn" href="' + esc(p.url) + '" target="_blank" rel="noopener" style="margin-top:16px">Voir la recette</a>';
-    if(p.nom) h += ' <button class="favb' + (isFav(p) ? ' on' : '') + '" type="button" id="favb">' + (isFav(p) ? '❤️ Dans vos favoris' : '🤍 Ajouter aux favoris') + '</button>';
+    h = '<div class="splat">' + (p.image && /^https:\/\//.test(p.image) ? '<img alt="" src="' + esc(p.image) + '">' : platEmoji(p.nom)) + '</div><div class="pn" style="font-size:28px;margin-top:16px;-webkit-line-clamp:4">' + esc(p.nom || 'Pas encore de plat prévu') + '</div>';
+    var bits = [p.temps, p.difficulte, p.portions ? p.portions + ' pers.' : '', p.source ? 'Trouvée sur ' + p.source : ''].filter(Boolean);
+    if(bits.length) h += '<div class="sub" style="margin-top:6px">' + esc(bits.join(' · ')) + '</div>';
+    h += '<div style="margin-top:16px">';
+    if(p.url && /^https:\/\//.test(p.url)) h += '<a class="b pri" href="' + esc(p.url) + '" target="_blank" rel="noopener">' + ico('book') + 'Voir la recette</a>';
+    if(p.nom) h += '<button class="b" type="button" data-act="favplat" style="color:' + (isFav(p) ? 'var(--rd)' : 'var(--tx)') + '">' + ico('heart') + (isFav(p) ? 'Dans vos favoris' : 'Favori') + '</button>';
+    h += '<button class="b" type="button" data-act="swap" data-date="' + todayKey(new Date()) + '">' + ico('swap') + 'Changer</button></div>';
     h += ingHtml(ing);
-    var rec = ((jour && jour.plats_recents) || []).slice(1, 8);
-    if(rec.length) h += '<div class="shead">Déjà proposés</div>' + rec.map(function(x){ return '<div class="arow">' + esc(x) + '</div>'; }).join('');
   } else if(kind === 'menu'){
     var menu = menuEff();
-    t = 'Menu de la semaine';
-    if(!menu.length) h = '<div class="empty">Le menu de la semaine arrive à la prochaine mise à jour du matin.</div>';
-    else h = '<div class="sub" style="margin-bottom:4px">Coche les recettes que tu vas cuisiner, puis ajoute leurs ingrédients aux courses.</div>';
+    t = 'Ingrédients de la semaine';
+    h = '<div class="sub" style="margin-bottom:6px">Cochez les recettes que vous allez cuisiner, puis ajoutez leurs ingrédients aux courses.</div>';
     menu.forEach(function(mm, i){
-      var d = new Date(mm.date + 'T12:00:00'), on = !!menuSel[mm.date];
-      h += '<div class="mrow' + (on ? ' msel' : '') + '" data-mi="' + i + '"><span class="box mbox">' + (on ? '✓' : '') + '</span><div class="md">' + (mm.date === todayKey(new Date()) ? "Ce soir" : JOURS[d.getDay()] + ' ' + d.getDate()) + '</div><div style="flex:1;min-width:0"><div class="mn">' + esc(mm.nom) + '</div><div class="sub">' + esc([mm.temps, mm.source].filter(Boolean).join(' · ')) + '</div></div>' +
-        '<button class="mic" type="button" data-favi="' + i + '" aria-label="Favori">' + (isFav(mm) ? '❤️' : '🤍') + '</button>' +
-        '<button class="mic" type="button" data-swapi="' + i + '" aria-label="Changer ce plat">⇄</button>' +
-        (mm.url ? '<a class="mlink" href="' + esc(mm.url) + '" target="_blank" rel="noopener">Recette</a>' : '') + '</div>';
+      if(!mm.nom) return;
+      var on = !!menuSel[mm.date], has = (mm.ingredients || []).length;
+      h += '<div class="mrow' + (on ? ' msel' : '') + '" data-mi="' + i + '"' + (has ? '' : ' style="opacity:.5"') + '>' + boxHtml(on) + '<div class="md">' + dayLabel(mm.date, true) + '</div><div style="flex:1;min-width:0"><div class="mn">' + esc(mm.nom) + '</div>' + (has ? '' : '<div class="sub">pas de liste d\'ingrédients</div>') + '</div></div>';
     });
-    if(menu.length) h += '<div class="sub" style="margin-top:6px">🤍 ajoute un plat à vos favoris · ⇄ le remplace par un de vos favoris</div>';
     h += '<div id="mingr">' + menuIngHtml(menu) + '</div>';
-    var fl = []; for(var fk in favs) if(favs[fk] && favs[fk].nom) fl.push(favs[fk]);
-    if(fl.length){
-      fl.sort(function(a, b){ return normTxt(a.nom).localeCompare(normTxt(b.nom)); });
-      h += '<div class="shead">Vos favoris ❤️</div>' + fl.map(function(f){ return '<div class="arow" style="display:flex;align-items:center"><span style="flex:1">' + esc(f.nom) + '</span>' + (f.url ? '<a class="mlink" href="' + esc(f.url) + '" target="_blank" rel="noopener">Recette</a>' : '') + '</div>'; }).join('');
-    }
   } else if(kind === 'wifi'){
     var w = (config && config.wifi) || {};
     t = 'Wi-Fi invités';
-    h = w.ssid ? '<div class="qr qrbig">' + wifiQr(w, 8) + '</div><div class="wn" style="font-size:22px">' + esc(w.ssid) + '</div>' + (w.type !== 'nopass' ? '<div class="wp" style="font-size:16px;color:#1c1c1e;margin-top:8px">Mot de passe : <b>' + esc(w.pass) + '</b></div>' : '') + '<div class="sub" style="text-align:center;margin-top:12px">Ouvre l\'appareil photo du téléphone et vise le code pour se connecter.</div>' : '<div class="empty">Ajoute ton Wi-Fi dans Réglages, en bas de la page.</div>';
-  } else if(kind === 'carbu'){
-    t = 'Carburant'; h = carbuSheet();
+    h = w.ssid ? '<div class="qr">' + wifiQr(w, 8) + '</div><div style="font-size:22px;font-weight:700;text-align:center">' + esc(w.ssid) + '</div>' + (w.type !== 'nopass' ? '<div style="font-size:18px;text-align:center;margin-top:8px">Mot de passe : <b>' + esc(w.pass) + '</b></div>' : '') + '<div class="sub" style="text-align:center;margin-top:12px">Ouvrez l\'appareil photo du téléphone et visez le code pour vous connecter.</div>' : '<div class="empty">Ajoutez votre Wi-Fi dans Réglages.</div><div style="margin-top:14px"><button type="button" class="b pri" data-act="page" data-p="reglages">Ouvrir les réglages</button></div>';
   } else if(kind === 'mot'){
-    t = 'Petit mot'; cls = 'note';
-    h = '<textarea id="mot2" class="smot" placeholder="Laisse un mot à l\'autre…">' + esc($('mot').value) + '</textarea><div style="text-align:right;margin-top:12px"><button class="main" type="button" id="mot2ok">Enregistrer</button></div>';
+    t = 'Petit mot';
+    var mm2 = membres();
+    h = '<textarea id="mot2" class="smot" placeholder="Laissez un mot…">' + esc(mot.texte || '') + '</textarea>' +
+      '<div class="frow" style="margin-top:12px"><select class="fld" id="motde" style="width:auto;flex:1"><option value="">Sans signature</option>' + mm2.map(function(x){ return '<option' + (mot.de === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>' +
+      (mot.texte ? '<button class="b danger" type="button" data-act="motdel">' + ico('trash') + 'Effacer</button>' : '') + '<button class="b pri" type="button" data-act="motok">Enregistrer</button></div>';
+  } else if(kind === 'minuteur'){
+    t = 'Minuteur';
+    h = '<div class="card tmw" style="box-shadow:none"><div class="tmv">' + (tmEnd ? tmLeft() : '00:00') + '</div><div class="tpr">' + tmButtons() + '</div></div>';
+  } else if(kind === 'edit'){
+    t = 'Modifier'; h = editHtml(opt);
+  } else if(kind === 'swap'){
+    t = 'Changer le plat'; h = swapHtml(opt);
   } else return;
   var first = sheetKind !== kind;
   sheetKind = kind;
   $('sheettitle').textContent = t;
-  $('sheetpanel').className = 'panel ' + cls;
-  if(kind === 'mot' && !first) return;
   $('sheetbody').innerHTML = h;
-  if(first){ show('sheet', true); document.body.style.overflow = 'hidden'; $('sheetbody').scrollTop = 0; }
-  var f = document.querySelector('#sheetbody form.sadd');
-  if(f) f.addEventListener('submit', function(e){
-    e.preventDefault(); var inp = f.querySelector('input'), v = inp.value.trim(); if(!v) return; inp.value = '';
-    var data = {name: v.slice(0, 80), done: false, at: Date.now()}, sel = $('srep');
-    if(sel && sel.value !== '') data.rep = parseInt(sel.value, 10);
-    if(kind === 'courses'){ addCourse(v); return; }
-    root.child(kind).push(data).catch(function(){ status('Ajout impossible'); });
-  });
-  var c2 = document.querySelector('[data-clear2]');
-  if(c2) c2.addEventListener('click', function(){
-    var up = {}; lists[kind].forEach(function(x){ if(x.done && x.rep == null) up[x.id] = null; }); root.child(kind).update(up);
-  });
-  if(kind === 'courses') renderChips();
-  if(kind === 'plat') bindFav();
+  if(first){ show('sheet', true); $('sheet').scrollTop = 0; }
   if(kind === 'plat' || kind === 'menu') bindIng();
   if(kind === 'menu') bindMenuSel();
-  if(kind === 'mot') $('mot2ok').addEventListener('click', function(){ $('mot').value = $('mot2').value; saveMot(); closeSheet(); });
+  if(kind === 'minuteur') tmShow();
+  if(kind === 'mot'){ var ta = $('mot2'); if(ta) setTimeout(function(){ try { ta.focus(); } catch(e){} }, 300); }
 }
 function bindIng(){
   if(!$('ingadd')) return;
-    var ingl = $('ingl'), ingRefresh = function(){
-      var n = ingl.querySelectorAll('.row.sel').length;
-      $('ingadd').textContent = n ? 'Ajouter ' + n + ' ingrédient' + (n > 1 ? 's' : '') + ' aux courses' : 'Rien à ajouter';
-    };
+  var ingl = $('ingl'), ingRefresh = function(){
+    var n = ingl.querySelectorAll('.row.sel').length;
+    $('ingadd').textContent = n ? 'Ajouter ' + n + ' ingrédient' + (n > 1 ? 's' : '') + ' aux courses' : 'Rien à ajouter';
+  };
+  ingRefresh();
+  ingl.addEventListener('click', function(e){
+    var r = e.target; while(r && r !== ingl && !(r.getAttribute && r.getAttribute('data-ing'))) r = r.parentNode;
+    if(!r || r === ingl) return;
+    var on = r.className.indexOf(' sel') < 0;
+    cls(r, 'sel', on);
+    r.querySelector('.box').innerHTML = on ? ico('tick') : '';
     ingRefresh();
-    ingl.addEventListener('click', function(e){
-      var r = e.target; while(r && r !== ingl && !(r.getAttribute && r.getAttribute('data-ing'))) r = r.parentNode;
-      if(!r || r === ingl) return;
-      var on = r.className.indexOf(' sel') < 0;
-      r.className = on ? r.className + ' sel' : r.className.replace(' sel', '');
-      r.querySelector('.box').textContent = on ? '✓' : '';
+  });
+  $('ingadd').addEventListener('click', function(){
+    var ing = curIng, rows = ingl.querySelectorAll('.row.sel'), up = {}, n = 0, now = Date.now(), have = {};
+    lists.courses.forEach(function(x){ if(!x.done) have[normTxt(x.name)] = 1; });
+    for(var i = 0; i < rows.length; i++){
+      var name = ing[parseInt(rows[i].getAttribute('data-ing'), 10)];
+      if(name && !have[normTxt(name)]){ have[normTxt(name)] = 1; up[root.child('courses').push().key] = {name: String(name).slice(0, 80), done: false, at: now + i}; n++; }
+    }
+    if(!n){ $('ingmsg').textContent = 'Tout est déjà dans la liste'; return; }
+    root.child('courses').update(up).then(function(){
+      $('ingmsg').textContent = n + ' ingrédient' + (n > 1 ? 's ajoutés' : ' ajouté') + ' à la liste de courses ✓';
+      toast(n + ' ingrédient' + (n > 1 ? 's ajoutés' : ' ajouté') + ' aux courses', function(){ var del = {}; for(var k in up) del[k] = null; root.child('courses').update(del); });
+      for(var j = 0; j < rows.length; j++){ cls(rows[j], 'sel', false); rows[j].querySelector('.box').innerHTML = ''; }
       ingRefresh();
-    });
-    $('ingadd').addEventListener('click', function(){
-      var ing = curIng, rows = ingl.querySelectorAll('.row.sel'), up = {}, n = 0, now = Date.now();
-      for(var i = 0; i < rows.length; i++){
-        var name = ing[parseInt(rows[i].getAttribute('data-ing'), 10)];
-        if(name){ up[root.child('courses').push().key] = {name: String(name).slice(0, 80), done: false, at: now + i}; n++; }
-      }
-      if(!n) return;
-      root.child('courses').update(up).then(function(){
-        $('ingmsg').textContent = n + ' ingrédient' + (n > 1 ? 's ajoutés' : ' ajouté') + ' à la liste de courses ✓';
-        for(var j = 0; j < rows.length; j++){ rows[j].className = rows[j].className.replace(' sel', ''); rows[j].querySelector('.box').textContent = ''; }
-        ingRefresh();
-      }, function(){ $('ingmsg').textContent = 'Ajout impossible pour le moment'; });
-    });
-  }
+    }, function(){ $('ingmsg').textContent = 'Ajout impossible pour le moment'; });
+  });
+}
 function bindMenuSel(){
   var menu = menuEff();
-  var rows = document.querySelectorAll('#sheetbody .mrow[data-mi]');
-  for(var i = 0; i < rows.length; i++){
-    rows[i].addEventListener('click', function(e){
-      if(e.target.tagName === 'A') return;
-      var mm = menu[parseInt(this.getAttribute('data-mi'), 10)]; if(!mm) return;
-      if(e.target.getAttribute('data-favi') != null){ toggleFav(mm); return; }
-      if(e.target.getAttribute('data-swapi') != null){ openSwap(mm); return; }
+  $$('#sheetbody .mrow[data-mi]').forEach(function(row){
+    row.addEventListener('click', function(){
+      var mm = menu[parseInt(this.getAttribute('data-mi'), 10)]; if(!mm || !(mm.ingredients || []).length) return;
       menuSel[mm.date] = !menuSel[mm.date];
-      this.className = 'mrow' + (menuSel[mm.date] ? ' msel' : '');
-      this.querySelector('.mbox').textContent = menuSel[mm.date] ? '✓' : '';
+      cls(this, 'msel', menuSel[mm.date]);
+      this.querySelector('.box').innerHTML = menuSel[mm.date] ? ico('tick') : '';
       $('mingr').innerHTML = menuIngHtml(menu);
       bindIng();
     });
-  }
+  });
 }
-function bindFav(){
-  var b = $('favb'); if(!b) return;
-  b.addEventListener('click', function(){ toggleFav(platDuJour()); });
-}
-function openSwap(mm){
-  var d = new Date(mm.date + 'T12:00:00'), fl = [];
-  for(var fk in favs) if(favs[fk] && favs[fk].nom) fl.push(favs[fk]);
+/* changer un plat : favori, plat écrit à la main, ou retour au plat prévu */
+function swapHtml(dk){
+  var mm = null; menuEff().forEach(function(x){ if(x.date === dk) mm = x; });
+  mm = mm || {date: dk, nom: ''};
+  var fl = []; for(var fk in favs) if(favs[fk] && favs[fk].nom) fl.push(favs[fk]);
   fl.sort(function(a, b){ return normTxt(a.nom).localeCompare(normTxt(b.nom)); });
-  var h = '<div class="sub">Remplacer « ' + esc(mm.nom) + ' » (' + JOURS[d.getDay()].toLowerCase() + ' ' + d.getDate() + ') par :</div>';
-  if(!fl.length) h += '<div class="empty" style="margin-top:12px">Vous n\'avez pas encore de favoris. Touchez 🤍 à côté d\'un plat que vous avez aimé.</div>';
-  fl.forEach(function(f){ h += '<div class="arow pick" data-pick="' + esc(favKey(f.nom)) + '">' + esc(f.nom) + '<div class="sub">' + esc([f.temps, f.source].filter(Boolean).join(' · ')) + '</div></div>'; });
-  if(mm.swapped) h += '<div class="arow pick" data-pick="__reset" style="color:#007aff">↺ Remettre le plat prévu</div>';
-  h += '<div style="margin-top:14px"><button type="button" id="swapback">← Retour au menu</button></div>';
-  $('sheetbody').innerHTML = h;
-  $('swapback').addEventListener('click', function(){ openSheet('menu'); });
-  var ps = document.querySelectorAll('#sheetbody [data-pick]');
-  for(var i = 0; i < ps.length; i++){
-    ps[i].addEventListener('click', function(){
-      var k = this.getAttribute('data-pick');
-      var done = function(){ openSheet('menu'); };
-      if(k === '__reset') root.child('menuOverride/' + mm.date).remove().then(done, done);
-      else if(favs[k]) root.child('menuOverride/' + mm.date).set(favs[k]).then(done, done);
-    });
-  }
+  var h = '<div class="sub">' + dayLabel(dk, true) + (mm.nom ? ' · prévu : ' + esc(mm.nom) : ' · rien de prévu') + '</div>';
+  h += '<form class="frow" data-form="platlibre" data-date="' + dk + '" style="margin-top:14px"><input class="fld" placeholder="Écrire un plat (ex. crêpes)" autocomplete="off"><button class="b pri" type="submit">Valider</button></form>';
+  h += '<div class="shead">Vos favoris ❤️</div>';
+  if(!fl.length) h += '<div class="empty">Pas encore de favoris : touchez le cœur à côté d\'un plat que vous avez aimé.</div>';
+  fl.forEach(function(f){ h += '<div class="arow pick" data-act="pick" data-date="' + dk + '" data-k="' + esc(favKey(f.nom)) + '">' + esc(f.nom) + '<div class="sub">' + esc([f.temps, f.source].filter(Boolean).join(' · ')) + '</div></div>'; });
+  if(mm.swapped) h += '<div class="arow pick" data-act="pick" data-date="' + dk + '" data-k="__reset" style="color:var(--bl)">↺ Remettre le plat prévu' + (mm.prevu ? ' (' + esc(mm.prevu) + ')' : '') + '</div>';
+  return h;
 }
-function bindSheets(){
-  var map = [['.w.wifi', 'wifi'], ['.w.menu', 'menu'], ['.w.carbu', 'carbu'], ['.w.wx', 'meteo'], ['.w.wx2', 'meteo'], ['.w.cal', 'agenda'], ['.rem.or', 'courses'], ['.rem.bl', 'taches'], ['.w.plat', 'plat'], ['.w.note', 'mot']];
-  map.forEach(function(x){
-    var el = document.querySelector(x[0]); if(!el) return;
-    el.className += ' tap';
-    el.addEventListener('click', function(e){
-      var t = e.target;
-      while(t && t !== el){ var tag = t.tagName; if(tag === 'INPUT' || tag === 'BUTTON' || tag === 'A' || tag === 'TEXTAREA' || tag === 'FORM' || (t.getAttribute && t.getAttribute('data-id'))) return; t = t.parentNode; }
-      openSheet(x[1]);
-    });
-  });
-  $('pingb').addEventListener('click', function(){ openSheet('plat'); });
-  $('sheetclose').addEventListener('click', closeSheet);
-  $('sheetbody').addEventListener('click', function(e){
-    var id = e.target.getAttribute && e.target.getAttribute('data-delt');
-    if(id){ e.stopPropagation(); root.child('taches/' + id).remove(); }
-  });
-  $('sheet').addEventListener('click', function(e){ if(e.target === $('sheet')) closeSheet(); });
+/* modifier un article, une tâche ou une date */
+function editHtml(o){
+  var v = (raw[o.col] || {})[o.id]; if(!v) return '<div class="empty">Élément introuvable (déjà supprimé ?)</div>';
+  var h = '<form data-form="edit" data-col="' + o.col + '" data-id="' + esc(o.id) + '">';
+  if(o.col === 'dates'){
+    h += '<label class="lb">Titre</label><input class="fld" name="t" value="' + esc(v.titre) + '"><label class="lb">Date</label><input class="fld" name="d" type="date" value="' + esc(v.date) + '">';
+  } else {
+    h += '<label class="lb">' + (o.col === 'courses' ? 'Article' : 'Tâche') + '</label><input class="fld" name="t" value="' + esc(v.name) + '" autocomplete="off">';
+    if(o.col === 'taches'){
+      h += '<label class="lb">Qui s\'en occupe ?</label><select class="fld" name="qui">' + quiOptions(v.qui || '') + '</select>';
+      h += '<label class="lb">Répétition</label><select class="fld" name="rep">' + repOptions(typeof v.rep === 'number' ? v.rep : '') + '</select>';
+      h += '<label class="lb">Priorité</label><select class="fld" name="prio"><option value="0">Normale</option><option value="1"' + (v.prio ? ' selected' : '') + '>⚑ Importante (rappelée sur l\'accueil)</option></select>';
+    }
+  }
+  h += '<div class="frow" style="margin-top:18px"><button type="button" class="b danger" data-act="del" data-col="' + o.col + '" data-ids="' + esc(o.id) + '">' + ico('trash') + 'Supprimer</button><span style="flex:1"></span><button type="submit" class="b pri">Enregistrer</button></div></form>';
+  return h;
+}
+function quiOptions(sel, court){ return '<option value="">' + (court ? 'Tous' : 'Tout le monde') + '</option>' + membres().map(function(m){ return '<option' + (m === sel ? ' selected' : '') + '>' + esc(m) + '</option>'; }).join(''); }
+function repOptions(sel){ return '<option value="">Une fois</option>' + [1, 2, 3, 4, 5, 6, 0].map(function(d){ return '<option value="' + d + '"' + (sel === d ? ' selected' : '') + '>Chaque ' + JOURS[d].toLowerCase() + '</option>'; }).join(''); }
+
+/* ---------- suppression avec possibilité d'annuler ---------- */
+function removeItems(col, ids, label){
+  var back = {}, up = {}, n = 0;
+  ids.forEach(function(id){ var v = (raw[col] || {})[id]; if(v){ back[id] = v; up[id] = null; n++; } });
+  if(!n) return;
+  root.child(col).update(up).then(function(){
+    toast(label || (n > 1 ? n + ' éléments supprimés' : 'Supprimé'), function(){ root.child(col).update(back).then(function(){ toast('Restauré'); }); });
+  }, function(){ toast('Suppression impossible pour le moment'); });
 }
 
-/* ---------- événements ---------- */
-function bind(){
-  document.addEventListener('click', function(e){
-    var t = e.target, row = null;
-    if(t.getAttribute && t.getAttribute('data-chip')){ addCourse(t.getAttribute('data-chip')); return; }
-    if(t.getAttribute && t.getAttribute('data-delt')) return;
-    while(t && t !== document){ if(t.getAttribute && t.getAttribute('data-id')){ row = t; break; } t = t.parentNode; }
-    if(!row) return;
-    var name = row.getAttribute('data-col'), id = row.getAttribute('data-id'), it = null;
-    for(var i = 0; i < lists[name].length; i++) if(lists[name][i].id === id) it = lists[name][i];
+/* ---------- interactions (un seul gestionnaire pour toute l'app) ---------- */
+function onClick(e){
+  var t = e.target, el = null;
+  while(t && t !== document){
+    var tag = t.tagName;
+    if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'LABEL') return;
+    if(tag === 'A' && t.href && t.getAttribute('href') !== '#') return;
+    if(t.getAttribute && (t.getAttribute('data-act') || t.getAttribute('data-chip') || (t.getAttribute('data-id') && t.getAttribute('data-col') && !t.getAttribute('data-act')))){ el = t; break; }
+    if(tag === 'FORM') return;
+    t = t.parentNode;
+  }
+  if(!el) return;
+  var a = el.getAttribute('data-act');
+  if(el.getAttribute('data-chip')){ addCourse(el.getAttribute('data-chip')); return; }
+  if(!a){ /* cocher / décocher */
+    var name = el.getAttribute('data-col'), id = el.getAttribute('data-id'), it = null;
+    if(!lists[name]) return;
+    lists[name].forEach(function(x){ if(x.id === id) it = x; });
     if(!it) return;
-    var ids = (row.getAttribute('data-ids') || id).split(','), up = {}, nd = !it.done, now = Date.now();
+    var ids = (el.getAttribute('data-ids') || id).split(','), up = {}, nd = !it.done, now = Date.now();
     ids.forEach(function(x){ up[x + '/done'] = nd; up[x + '/doneAt'] = now; });
-    root.child(name).update(up).catch(function(){ status('Modification impossible'); });
-  });
-  var forms = document.querySelectorAll('form.add');
-  for(var fi = 0; fi < forms.length; fi++){
-    (function(f){
-      f.addEventListener('submit', function(e){
-        e.preventDefault();
-        var inp = f.querySelector('input'), v = inp.value.trim(), name = f.getAttribute('data-col');
-        if(!v) return;
-        inp.value = '';
-        if(name === 'courses'){ addCourse(v); return; }
-        root.child(name).push({name: v.slice(0, 80), done: false, at: Date.now()}).catch(function(){ status('Ajout impossible'); });
-      });
-    })(forms[fi]);
+    root.child(name).update(up).catch(function(){ toast('Modification impossible pour le moment'); });
+    return;
   }
-  var clears = document.querySelectorAll('[data-clear]');
-  for(var ci = 0; ci < clears.length; ci++){
-    (function(b){
-      b.addEventListener('click', function(){
-        var name = b.getAttribute('data-clear'), up = {};
-        lists[name].forEach(function(x){ if(x.done && x.rep == null) up[x.id] = null; });
-        root.child(name).update(up).catch(function(){ status('Suppression impossible'); });
-      });
-    })(clears[ci]);
+  e.preventDefault();
+  if(a === 'page'){ closeSheet(); goPage(el.getAttribute('data-p')); }
+  else if(a === 'sheet') openSheet(el.getAttribute('data-k'));
+  else if(a === 'veille') setTimeout(goVeille, 50);
+  else if(a === 'sc'){ var s = SHORTCUTS[el.getAttribute('data-sc')]; if(s) s.go(); }
+  else if(a === 'tm') tmStart(parseInt(el.getAttribute('data-min'), 10));
+  else if(a === 'tmstop') tmStop();
+  else if(a === 'edit') openSheet('edit', {col: el.getAttribute('data-col'), id: el.getAttribute('data-id')});
+  else if(a === 'del'){ var c = el.getAttribute('data-col'); removeItems(c, el.getAttribute('data-ids').split(','), c === 'courses' ? 'Article supprimé' : c === 'taches' ? 'Tâche supprimée' : 'Date supprimée'); if(sheetKind === 'edit') closeSheet(); }
+  else if(a === 'clear'){
+    var col = el.getAttribute('data-col'), ids2 = lists[col].filter(function(x){ return x.done && x.rep == null; }).map(function(x){ return x.id; });
+    if(!ids2.length){ toast(col === 'courses' ? 'Aucun article coché' : 'Aucune tâche faite à retirer'); return; }
+    var nn = ids2.length, pl = nn > 1 ? 's' : '';
+    removeItems(col, ids2, col === 'courses' ? nn + ' article' + pl + ' retiré' + pl : nn + ' tâche' + pl + ' retirée' + pl);
   }
-  $('sopen').addEventListener('click', function(){
-    show('settings', true); $('cv').value = config && config.ville ? config.ville : ''; $('cmsg').textContent = '';
-    var wf = (config && config.wifi) || {}; $('wssid').value = wf.ssid || ''; $('wpass').value = wf.pass || ''; $('wtype').value = wf.type || 'WPA';
-    var c = veilleCfg(); $('vdelay').value = String(c.delay); $('vnuit').value = c.nuit ? '1' : '0'; $('vdeb').value = String(c.debut); $('vfin').value = String(c.fin);
-  });
-  $('wopen').addEventListener('click', function(e){ e.stopPropagation(); openSheet('wifi'); });
-  $('vopen').addEventListener('click', function(e){ e.stopPropagation(); setTimeout(goVeille, 50); });
+  else if(a === 'swap') openSheet('swap', el.getAttribute('data-date'));
+  else if(a === 'pick'){
+    var dk = el.getAttribute('data-date'), k = el.getAttribute('data-k');
+    var p = k === '__reset' ? root.child('menuOverride/' + dk).remove() : favs[k] ? root.child('menuOverride/' + dk).set(favs[k]) : null;
+    if(p) p.then(function(){ closeSheet(); toast(k === '__reset' ? 'Plat prévu remis' : 'Plat changé'); }, function(){ toast('Changement impossible pour le moment'); });
+  }
+  else if(a === 'fav'){ var mm = menuEff()[parseInt(el.getAttribute('data-i'), 10)]; toggleFav(mm); }
+  else if(a === 'favplat'){ toggleFav(platDuJour()); setTimeout(function(){ if(sheetKind === 'plat') openSheet('plat'); }, 400); }
+  else if(a === 'motok'){ saveMot($('mot2').value, $('motde').value).then(closeSheet); }
+  else if(a === 'motdel'){ saveMot('', '').then(closeSheet); }
+  else if(a === 'tglprio'){ cls(el, 'on', el.className.indexOf(' on') < 0); }
+}
+function onSubmit(e){
+  var f = e.target, kind = f.getAttribute && f.getAttribute('data-form');
+  if(!kind) return;
+  e.preventDefault();
+  var inp = f.querySelector('input'), v = inp ? inp.value.trim() : '';
+  if(kind === 'courses'){ if(!v) return; inp.value = ''; addCourse(v); if(f.className.indexOf('qadd') >= 0) inp.blur(); return; }
+  if(kind === 'taches'){
+    if(!v) return;
+    var dup = lists.taches.filter(function(x){ return !x.done && normTxt(x.name) === normTxt(v); });
+    if(dup.length){ toast('Cette tâche est déjà dans la liste'); return; }
+    var data = {name: v.slice(0, 80), done: false, at: Date.now()}, q = f.querySelector('[name=qui]').value, r = f.querySelector('[name=rep]').value, pb = f.querySelector('.tgl');
+    if(q) data.qui = q; if(r !== '') data.rep = parseInt(r, 10); if(pb.className.indexOf(' on') >= 0) data.prio = true;
+    inp.value = ''; cls(pb, 'on', false);
+    root.child('taches').push(data).then(function(){ toast('Tâche ajoutée' + (data.rep != null && data.rep !== new Date().getDay() ? ' · apparaîtra le ' + JOURS[data.rep].toLowerCase() : '')); }, function(){ toast('Ajout impossible pour le moment'); });
+    return;
+  }
+  if(kind === 'dates'){
+    var d = f.querySelector('[name=d]').value;
+    if(!v || !/^\d{4}-\d{2}-\d{2}$/.test(d)){ toast('Indiquez un titre et une date'); return; }
+    inp.value = ''; f.querySelector('[name=d]').value = '';
+    root.child('dates').push({titre: v.slice(0, 60), date: d}).then(function(){ toast('Date ajoutée'); }, function(){ toast('Date non enregistrée'); });
+    return;
+  }
+  if(kind === 'platlibre'){
+    if(!v) return;
+    root.child('menuOverride/' + f.getAttribute('data-date')).set({nom: v.slice(0, 80), libre: true, at: Date.now()}).then(function(){ closeSheet(); toast('Plat enregistré'); }, function(){ toast('Enregistrement impossible'); });
+    return;
+  }
+  if(kind === 'edit'){
+    var col = f.getAttribute('data-col'), id = f.getAttribute('data-id'), up = {};
+    if(!v){ toast('Le nom ne peut pas être vide'); return; }
+    if(col === 'dates'){ var dd = f.querySelector('[name=d]').value; if(!/^\d{4}-\d{2}-\d{2}$/.test(dd)){ toast('Date invalide'); return; } up = {titre: v.slice(0, 60), date: dd}; }
+    else {
+      up.name = v.slice(0, 80);
+      if(col === 'taches'){ var rv = f.querySelector('[name=rep]').value; up.qui = f.querySelector('[name=qui]').value || null; up.rep = rv === '' ? null : parseInt(rv, 10); up.prio = f.querySelector('[name=prio]').value === '1' ? true : null; }
+    }
+    root.child(col + '/' + id).update(up).then(function(){ closeSheet(); toast('Modifié'); }, function(){ toast('Modification impossible'); });
+  }
+}
+
+/* ---------- réglages ---------- */
+var HOURS = ''; for(var hh = 0; hh < 24; hh++) HOURS += '<option value="' + hh + '">' + hh + ' h</option>';
+function fillSettings(){
+  $('cv').value = config && config.ville ? config.ville : '';
+  $('cmem').value = membres().join(', ');
+  var wf = (config && config.wifi) || {}; $('wssid').value = wf.ssid || ''; $('wpass').value = wf.pass || ''; $('wtype').value = wf.type || 'WPA';
+  var c = veilleCfg(); $('vdelay').value = String(c.delay); $('vnuit').value = c.nuit ? '1' : '0'; $('vdeb').value = String(c.debut); $('vfin').value = String(c.fin);
+  var l = scList(), opts = function(sel){ var o = ''; for(var k in SHORTCUTS) o += '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + esc(SHORTCUTS[k].nom) + '</option>'; return o; };
+  $('scsel').innerHTML = l.map(function(k, i){ return '<label class="lb">Tuile ' + (i + 1) + '</label><select class="fld" data-sci="' + i + '">' + opts(k) + '</select>'; }).join('');
+  $$('#scsel select').forEach(function(s){ s.addEventListener('change', function(){ var cur = scList(); cur[parseInt(s.getAttribute('data-sci'), 10)] = s.value; store('ecran-raccourcis', JSON.stringify(cur)); renderShortcuts(); toast('Raccourcis enregistrés sur cet appareil'); }); });
+  var bk = loadJSON('ecran-sauvegarde', null);
+  $('bkinfo').textContent = bk && bk.at ? 'Dernière copie automatique sur cet appareil : ' + new Date(bk.at).toLocaleDateString('fr-FR') + ' à ' + hm(bk.at) + '.' : 'Pas encore de copie automatique sur cet appareil.';
+}
+function bindSettings(){
+  $('vdeb').innerHTML = HOURS; $('vfin').innerHTML = HOURS;
   var saveV = function(){
     var c = {delay: parseInt($('vdelay').value, 10), nuit: $('vnuit').value === '1', debut: parseInt($('vdeb').value, 10), fin: parseInt($('vfin').value, 10)};
-    try { localStorage.setItem('ecran-veille', JSON.stringify(c)); $('vmsg').textContent = 'Enregistré sur cet appareil'; } catch(e){ $('vmsg').textContent = 'Impossible d\'enregistrer sur cet appareil'; }
+    toast(store('ecran-veille', JSON.stringify(c)) ? 'Veille enregistrée sur cet appareil' : 'Impossible d\'enregistrer sur cet appareil');
   };
   ['vdelay', 'vnuit', 'vdeb', 'vfin'].forEach(function(id){ $(id).addEventListener('change', saveV); });
-  $('cclose').addEventListener('click', function(){ show('settings', false); });
   $('wsave').addEventListener('click', function(){
     var w = {ssid: $('wssid').value.trim().slice(0, 64), pass: $('wpass').value.slice(0, 64), type: $('wtype').value};
-    $('wmsg').textContent = 'Enregistrement…';
-    root.child('config/wifi').set(w).then(function(){ $('wmsg').textContent = 'Enregistré'; }, function(){ $('wmsg').textContent = 'Impossible d\'enregistrer'; });
+    root.child('config/wifi').set(w).then(function(){ $('wmsg').textContent = 'Enregistré ✓'; }, function(){ $('wmsg').textContent = 'Impossible d\'enregistrer'; });
   });
   $('csave').addEventListener('click', function(){
-    var v = $('cv').value.trim().slice(0, 60);
-    $('cmsg').textContent = 'Enregistrement…';
-    root.child('config').update({ville: v}).then(function(){ $('cmsg').textContent = 'Enregistré'; }, function(){ $('cmsg').textContent = 'Impossible d\'enregistrer'; });
+    var v = $('cv').value.trim().slice(0, 60), m = $('cmem').value.split(',').map(function(x){ return x.trim().slice(0, 24); }).filter(Boolean).slice(0, 6);
+    var up = {membres: m.length ? m : null}; if(v) up.ville = v;
+    root.child('config').update(up).then(function(){ $('cmsg').textContent = 'Enregistré ✓'; }, function(){ $('cmsg').textContent = 'Impossible d\'enregistrer'; });
   });
+  $('bkdl').addEventListener('click', exportData);
+  $('bkrest').addEventListener('click', function(){
+    var bk = loadJSON('ecran-sauvegarde', null);
+    if(!bk || !bk.data){ $('bkmsg').textContent = 'Aucune copie automatique sur cet appareil.'; return; }
+    restoreData(bk.data, 'la copie automatique du ' + new Date(bk.at).toLocaleDateString('fr-FR') + ' à ' + hm(bk.at));
+  });
+  $('bkfile').addEventListener('click', function(){ $('bkin').click(); });
+  $('bkin').addEventListener('change', function(){
+    var f = this.files && this.files[0]; if(!f) return;
+    var r = new FileReader();
+    r.onload = function(){ try { var d = JSON.parse(r.result); restoreData(d.data || d, 'le fichier « ' + f.name + ' »'); } catch(e){ $('bkmsg').textContent = 'Ce fichier n\'est pas une sauvegarde valide.'; } };
+    r.readAsText(f); this.value = '';
+  });
+}
+
+/* ---------- sauvegarde et restauration ---------- */
+function pickData(v){ var o = {}; DATA_KEYS.forEach(function(k){ if(v && v[k] != null) o[k] = v[k]; }); return o; }
+function autoBackup(){
+  if(!root) return;
+  var bk = loadJSON('ecran-sauvegarde', null);
+  if(bk && bk.at && Date.now() - bk.at < 6 * 3600000) return;
+  root.once('value').then(function(s){
+    var d = pickData(s.val());
+    if(!d.courses && !d.taches && !d.config) return;   /* ne jamais écraser une copie avec des données vides */
+    if(bk && bk.at && new Date(bk.at).toDateString() !== new Date().toDateString()) store('ecran-sauvegarde-veille', JSON.stringify(bk));
+    store('ecran-sauvegarde', JSON.stringify({at: Date.now(), data: d}));
+  }).catch(function(){});
+}
+function exportData(){
+  root.once('value').then(function(s){
+    var d = {app: 'ecran-maison', at: Date.now(), data: pickData(s.val())}, txt = JSON.stringify(d, null, 2);
+    var name = 'maison-sauvegarde-' + todayKey(new Date()) + '.json';
+    try {
+      var blob = new Blob([txt], {type: 'application/json'}), url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = name; document.body.appendChild(a); a.click();
+      setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
+      $('bkmsg').textContent = 'Sauvegarde créée : ' + name + ' (sur iPad, utilisez « Partager » puis « Enregistrer dans Fichiers »).';
+    } catch(e){ $('bkmsg').textContent = 'Téléchargement impossible sur cet appareil.'; }
+  }, function(){ $('bkmsg').textContent = 'Lecture des données impossible (hors ligne ?)'; });
+}
+function restoreData(d, label){
+  d = pickData(d);
+  if(!d.courses && !d.taches && !d.config && !d.mot && !d.dates){ $('bkmsg').textContent = 'Cette sauvegarde ne contient pas de données.'; return; }
+  if(!window.confirm('Remplacer les données actuelles par ' + label + ' ?\nLes données actuelles seront gardées en copie sur cet appareil.')) return;
+  root.once('value').then(function(s){
+    store('ecran-avant-restauration', JSON.stringify({at: Date.now(), data: pickData(s.val())}));
+    var up = {}; DATA_KEYS.forEach(function(k){ if(d[k] != null) up[k] = d[k]; });
+    return root.update(up);
+  }).then(function(){ $('bkmsg').textContent = 'Données restaurées ✓'; toast('Données restaurées'); }, function(){ $('bkmsg').textContent = 'Restauration impossible pour le moment'; });
 }
 
 /* ---------- démarrage ---------- */
+var started = false, offT = null;
 function start(code){
   root = firebase.database().ref('foyers/' + code);
   root.child('config').once('value').then(function(s){
     store(KEY, code);
     show('login', false); show('app', true);
     config = s.val();
+    if(started) return; started = true;
+    fillIcons(document);
+    $('tpr1').innerHTML = tmButtons();
+    $$('select[name=rep]').forEach(function(x){ x.innerHTML = repOptions(''); });
+    $$('select[name=qui]').forEach(function(x){ x.innerHTML = quiOptions('', true); });
     tick(); setInterval(tick, 5000);
-    bind();
-    watchList('courses'); watchList('taches');
-    watchMot(); watchDates(); bindTimer(); bindSheets();
-    root.child('freq').on('value', function(s){ freq = s.val() || {}; renderChips(); });
-    var refreshMenu = function(){ renderJour(); renderMenu(); if(sheetKind === 'plat' || sheetKind === 'menu') openSheet(sheetKind); };
+    document.addEventListener('click', onClick);
+    document.addEventListener('submit', onSubmit, true);
+    $('sheetclose').addEventListener('click', closeSheet);
+    $('sheet').addEventListener('click', function(e){ if(e.target === $('sheet')) closeSheet(); });
+    $('toastu').addEventListener('click', function(){ var f = undoFn; undoFn = null; $('toast').className = ''; if(f) f(); });
+    bindSettings();
+    safe(renderShortcuts); safe(renderPlat); safe(renderMenu);
+    watchList('courses'); watchList('taches'); watchMot(); watchDates();
+    root.child('freq').on('value', function(s){ freq = s.val() || {}; safe(renderChips); safe(renderHomeCourses); });
+    var refreshMenu = function(){ safe(renderPlat); safe(renderMenu); safe(renderInfos); if(sheetKind === 'plat') openSheet('plat'); };
     root.child('favoris').on('value', function(s){ favs = s.val() || {}; refreshMenu(); });
     root.child('menuOverride').on('value', function(s){ overrides = s.val() || {}; refreshMenu(); });
-    root.child('config').on('value', function(s){ config = s.val(); loadMeteo(); renderWifi(); });
-    loadJour();
+    root.child('config').on('value', function(s){
+      var old = config && config.ville; config = s.val();
+      if(!lastMeteo || (config && config.ville) !== old) safe(loadMeteo);
+      tick(); safe(renderShortcuts);
+      $$('select[name=qui]').forEach(function(x){ x.innerHTML = quiOptions('', true); });
+    });
+    firebase.database().ref('.info/connected').on('value', function(s){
+      clearTimeout(offT);
+      if(s.val() === true){ if(infoState.offline){ infoState.offline = false; safe(renderInfos); toast('Connexion rétablie, tout est synchronisé'); } status('Synchronisé'); }
+      else offT = setTimeout(function(){ infoState.offline = true; status('Hors ligne'); safe(renderInfos); }, 8000);
+    });
+    loadJour(); safe(loadMeteo);
+    var rz = null; window.addEventListener('resize', function(){ clearTimeout(rz); rz = setTimeout(function(){ safe(renderHomeCourses); safe(renderHomeTaches); safe(renderEvents); }, 200); });
     setInterval(loadJour, 30 * 60000);
-    setInterval(loadMeteo, 10 * 60000);
+    setInterval(function(){ safe(loadMeteo); }, 10 * 60000);
+    setTimeout(autoBackup, 15000); setInterval(autoBackup, 3600000);
     var lastDay = new Date().getDate();
-    setInterval(function(){ if(new Date().getDate() !== lastDay){ lastDay = new Date().getDate(); loadJour(); renderDates(); loadMeteo(); resetRecurring('taches'); renderList('taches'); } }, 60000);
+    setInterval(function(){ if(new Date().getDate() !== lastDay){ lastDay = new Date().getDate(); loadJour(); renderDates(); safe(loadMeteo); resetRecurring('taches'); renderList('taches'); } }, 60000);
   }, function(){
     store(KEY, null); root = null;
     show('app', false); show('login', true);
-    $('lmsg').textContent = 'Code incorrect';
+    $('lmsg').textContent = 'Code incorrect ou pas de connexion';
   });
 }
 
