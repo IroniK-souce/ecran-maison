@@ -85,6 +85,8 @@ function membres(){
 }
 
 /* ---------- horloge et moment de la journée ---------- */
+function grand(){ return load('ecran-grand') === '1'; }
+function applyGrand(){ cls(document.body, 'grand', grand()); }
 function tod(h){ return h >= 5 && h < 11 ? 'matin' : h >= 11 && h < 18 ? 'jour' : h >= 18 && h < 23 ? 'soir' : 'nuit'; }
 function tick(){
   var d = new Date(), t = pad(d.getHours()) + ':' + pad(d.getMinutes());
@@ -315,11 +317,11 @@ function resetRecurring(name){
 }
 function tacheHtml(it, compact){
   var tags = (it.prio && !it.done && !compact ? '<span class="tag p">⚑ important</span>' : '') +
-    (it.qui ? '<span class="tag q">' + esc(compact ? it.qui.charAt(0).toUpperCase() : it.qui) + '</span>' : '') +
+    (it.qui && !compact ? '<span class="tag q">' + esc(it.qui) + '</span>' : '') +
     (!compact && it.rep != null ? '<span class="tag r">↻ chaque ' + JOURS[it.rep].toLowerCase() + '</span>' : '') +
     (!compact && it.done && it.doneAt ? '<span class="tag">faite ' + (new Date(it.doneAt).toDateString() === new Date().toDateString() ? 'à ' + hm(it.doneAt) : 'le ' + new Date(it.doneAt).getDate() + '/' + (new Date(it.doneAt).getMonth() + 1)) + '</span>' : '');
-  return '<div class="row' + (it.done ? ' done' : '') + (it.prio && !it.done ? ' prio' : '') + '" data-col="taches" data-id="' + esc(it.id) + '">' + boxHtml(it.done) +
-    (compact ? '<span class="nm">' + esc(it.name) + '</span>' + tags : '<span class="nm2"><span class="nm">' + esc(it.name) + '</span>' + (tags ? '<span class="tg">' + tags + '</span>' : '') + '</span>') +
+  return '<div class="row' + (it.done ? ' done' : '') + (it.prio && !it.done ? ' prio' : '') + (compact ? ' cp' : '') + '" data-col="taches" data-id="' + esc(it.id) + '">' + boxHtml(it.done) +
+    (compact ? '<span class="nm2"><span class="nm">' + esc(it.name) + '</span>' + (it.qui || it.prio ? '<span class="qn"' + (it.prio && !it.qui ? ' style="color:var(--ye)"' : '') + '>' + (it.prio ? '⚑ ' : '') + esc(it.qui || 'Important') + '</span>' : '') + '</span>' : '<span class="nm2"><span class="nm">' + esc(it.name) + '</span>' + (tags ? '<span class="tg">' + tags + '</span>' : '') + '</span>') +
     (compact ? '' : '<button type="button" class="ib" data-act="edit" data-col="taches" data-id="' + esc(it.id) + '" aria-label="Modifier">' + ico('edit') + '</button><button type="button" class="ib" data-act="del" data-col="taches" data-ids="' + esc(it.id) + '" aria-label="Supprimer">' + ico('trash') + '</button>') + '</div>';
 }
 function sortTaches(a, b){ return (b.prio - a.prio) || (a.at - b.at); }
@@ -335,26 +337,38 @@ function renderTaches(){
   $('l-taches').innerHTML = h || '<div class="empty">Aucune tâche. Ajoutez-en une au-dessus.</div>';
   $('ntaches2').textContent = auj.length;
 }
+/* remplit une carte avec autant de lignes que la place le permet, sans rien couper */
+function fitList(el, rows, more, narrowMax){
+  var wide = window.innerWidth >= 900;
+  if(!wide) rows.length > narrowMax ? (el.innerHTML = rows.slice(0, narrowMax).join('') + more(rows.length - narrowMax)) : (el.innerHTML = rows.join(''));
+  else {
+    el.innerHTML = rows.join('');
+    if(el.scrollHeight <= el.clientHeight + 2) return;
+    var n = rows.length;
+    while(n > 1){
+      n--;
+      el.innerHTML = rows.slice(0, n).join('') + more(rows.length - n);
+      if(el.scrollHeight <= el.clientHeight + 2) break;
+    }
+    if(el.scrollHeight > el.clientHeight + 2) el.innerHTML = rows[0];
+  }
+}
 function renderHomeCourses(){
-  var el = $('h-courses'), gl = groupCourses(lists.courses), h = '', rowsN = window.innerWidth >= 900 && el.clientHeight > 60 ? Math.max(1, Math.floor((el.clientHeight + 4) / 44)) : 3, max = rowsN * 2;
-  var shown = gl.length > max ? gl.slice(0, max - 1) : gl;
-  shown.forEach(function(g){ h += '<div class="row" data-col="courses" data-id="' + esc(g.ids[0]) + '" data-ids="' + esc(g.ids.join(',')) + '">' + boxHtml(false) + '<span class="nm">' + esc(g.name) + (g.ids.length > 1 ? ' <span class="mult">×' + g.ids.length + '</span>' : '') + '</span></div>'; });
-  if(gl.length > max) h += '<div class="more tap" data-act="page" data-p="maison">+ ' + (gl.length - shown.length) + ' autres articles ›</div>';
+  var el = $('h-courses'), gl = groupCourses(lists.courses);
   if(!gl.length){
     var c = chipsHtml(4);
-    h = '<div class="empty" style="width:100%;padding:4px 8px">Rien à acheter.' + (c ? ' Souvent achetés :' : '') + '</div>' + (c ? '<div class="chips" style="padding:0 8px">' + c + '</div>' : '');
+    el.innerHTML = '<div class="empty" style="width:100%;padding:4px 8px">Rien à acheter.' + (c ? ' Souvent achetés :' : '') + '</div>' + (c ? '<div class="chips" style="padding:0 8px">' + c + '</div>' : '');
+    return;
   }
-  el.innerHTML = h;
+  fitList(el, gl.map(function(g){ return '<div class="row" data-col="courses" data-id="' + esc(g.ids[0]) + '" data-ids="' + esc(g.ids.join(',')) + '">' + boxHtml(false) + '<span class="nm">' + esc(g.name) + (g.ids.length > 1 ? ' <span class="mult">×' + g.ids.length + '</span>' : '') + '</span></div>'; }),
+    function(k){ return '<div class="more tap" data-act="page" data-p="maison">+ ' + k + ' autre' + (k > 1 ? 's' : '') + ' ›</div>'; }, 8);
 }
 function renderHomeTaches(){
   var items = todayItems('taches'), todo = items.filter(function(x){ return !x.done; }).sort(sortTaches), done = items.length - todo.length;
   $('ntaches').textContent = todo.length;
   $('tdone').textContent = done ? done + ' faite' + (done > 1 ? 's' : '') : '';
-  var h = '', el = $('h-taches'), cap = window.innerWidth >= 900 && el.clientHeight > 40 ? Math.max(1, Math.floor((el.clientHeight + 4) / 46)) : 5;
-  var n = todo.length > cap ? Math.max(1, cap - 1) : cap;
-  todo.slice(0, n).forEach(function(x){ h += tacheHtml(x, true); });
-  if(todo.length > n) h += '<div class="more" style="padding-left:0">+ ' + (todo.length - n) + ' autre' + (todo.length - n > 1 ? 's' : '') + ' ›</div>';
-  $('h-taches').innerHTML = h || '<div class="empty">Tout est fait ✓</div>';
+  if(!todo.length){ $('h-taches').innerHTML = '<div class="empty">Tout est fait ✓</div>'; return; }
+  fitList($('h-taches'), todo.map(function(x){ return tacheHtml(x, true); }), function(k){ return '<div class="more" style="padding-left:0">+ ' + k + ' autre' + (k > 1 ? 's' : '') + ' ›</div>'; }, 5);
 }
 
 /* ---------- plat, menu, agenda (data.json mis à jour chaque matin) ---------- */
@@ -378,7 +392,7 @@ function dayLabel(dk, long){
 }
 function renderMenu(){
   var menu = menuEff(), h = '', tk = todayKey(new Date());
-  menu.slice(0, 4).forEach(function(mm){
+  menu.slice(1, 3).forEach(function(mm){
     h += '<div class="mday' + (mm.date === tk ? ' on' : '') + '"><div class="md">' + dayLabel(mm.date) + '</div><div class="mn' + (mm.nom ? '' : ' v') + '">' + esc(mm.nom || 'À choisir') + '</div></div>';
   });
   $('h-menu').innerHTML = h;
@@ -407,10 +421,11 @@ function datesList(){
 var MABR = ['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
 function evDate(dk){ var d = new Date(dk + 'T12:00:00'); return JOURS[d.getDay()].slice(0, 3) + '<b>' + d.getDate() + '</b>' + MABR[d.getMonth()]; }
 function renderEvents(){
-  var h = '', n = 0, el = $('h-events'), cap = window.innerWidth >= 900 && el.clientHeight > 40 ? Math.max(1, Math.floor((el.clientHeight + 6) / 56)) : 4;
-  agendaItems().forEach(function(a){ if(n >= cap) return; n++; h += '<div class="ev"><div class="d">' + evDate(a.date) + '</div><div class="x">' + esc(a.titre) + '<span>' + esc(a.heure || 'Toute la journée') + '</span></div></div>'; });
-  datesList().forEach(function(x){ if(n >= cap) return; n++; h += '<div class="ev"><div class="d">' + evDate(x.date) + '</div><div class="x c">' + esc(x.titre) + '<span>' + (x.n === 0 ? "C'est aujourd'hui 🎉" : x.n === 1 ? 'Demain' : 'Dans ' + x.n + ' jours') + '</span></div></div>'; });
-  $('h-events').innerHTML = h || '<div class="empty">' + (jour && jour.agenda_relie ? 'Rien aujourd\'hui ni demain' : 'Agenda pas encore relié') + '</div>';
+  var rows = [];
+  agendaItems().forEach(function(a){ rows.push('<div class="ev"><div class="d">' + evDate(a.date) + '</div><div class="x">' + esc(a.titre) + '<span>' + esc(a.heure || 'Toute la journée') + '</span></div></div>'); });
+  datesList().forEach(function(x){ rows.push('<div class="ev"><div class="d">' + evDate(x.date) + '</div><div class="x c">' + esc(x.titre) + '<span>' + (x.n === 0 ? "C'est aujourd'hui 🎉" : x.n === 1 ? 'Demain' : 'Dans ' + x.n + ' jours') + '</span></div></div>'); });
+  if(!rows.length){ $('h-events').innerHTML = '<div class="empty">' + (jour && jour.agenda_relie ? 'Rien aujourd\'hui ni demain' : 'Agenda pas encore relié') + '</div>'; return; }
+  fitList($('h-events'), rows, function(k){ return '<div class="more" style="padding-left:0">+ ' + k + ' autre' + (k > 1 ? 's' : '') + ' ›</div>'; }, 4);
 }
 var infoState = {gel: '', alertes: [], vigi: null, offline: false};
 function renderVigi(){
@@ -448,13 +463,13 @@ function renderInfos(){
 var SHORTCUTS = {
   minuteur: {nom: 'Minuteur', ic: 'timer', k: 'k-or', sub: function(){ return tmRing ? 'Terminé !' : tmEnd ? tmLeft() : 'Lancer'; }, go: function(){ openSheet('minuteur'); }},
   carbu: {nom: 'Gazole', ic: 'fuel', k: 'k-gr', sub: function(){ var b = bestPrix('gazole_prix'); return b ? prix(b.gazole_prix) : 'Prix du jour'; }, go: function(){ goPage('infos'); }},
-  meteo: {nom: 'Météo', ic: 'cloud', k: 'k-bl', sub: function(){ return $('mt').textContent !== '–' ? $('mt').textContent + ' · détails' : 'Détails'; }, go: function(){ goPage('infos'); }},
-  avenir: {nom: 'Dates', ic: 'gift', k: 'k-pu', sub: function(){ var l = datesList(); return l.length ? (l[0].n === 0 ? "Aujourd'hui" : 'J-' + l[0].n) + ' ' + l[0].titre : 'Ajouter'; }, go: function(){ goPage('maison'); }},
+  meteo: {nom: 'Météo', ic: 'cloud', k: 'k-bl', sub: function(){ return $('mt').textContent !== '–' ? $('mt').textContent + ' ' + $('mi').textContent : 'Détails'; }, go: function(){ goPage('infos'); }},
+  avenir: {nom: 'Dates', ic: 'gift', k: 'k-pu', sub: function(){ var l = datesList(); return l.length ? (l[0].n === 0 ? "Aujourd'hui" : 'J-' + l[0].n) : 'Ajouter'; }, go: function(){ goPage('maison'); }},
   wifi: {nom: 'Wi-Fi invités', ic: 'wifi', k: 'k-bl', sub: function(){ return config && config.wifi && config.wifi.ssid ? 'QR code' : 'À régler'; }, go: function(){ openSheet('wifi'); }},
-  veille: {nom: 'Veille', ic: 'moon', k: 'k-pu', sub: function(){ return 'Éteindre l\'écran'; }, go: function(){ setTimeout(goVeille, 50); }},
-  menu: {nom: 'Ingrédients', ic: 'cart', k: 'k-or', sub: function(){ return 'Menu de la semaine'; }, go: function(){ openSheet('menu'); }},
+  veille: {nom: 'Veille', ic: 'moon', k: 'k-pu', sub: function(){ return 'Écran noir'; }, go: function(){ setTimeout(goVeille, 50); }},
+  menu: {nom: 'Ingrédients', ic: 'cart', k: 'k-or', sub: function(){ return 'Semaine'; }, go: function(){ openSheet('menu'); }},
   mot: {nom: 'Petit mot', ic: 'note', k: 'k-ye', sub: function(){ return 'Écrire'; }, go: function(){ openSheet('mot'); }},
-  reglages: {nom: 'Réglages', ic: 'gear', k: '', sub: function(){ return 'Ville, Wi-Fi, veille'; }, go: function(){ goPage('reglages'); }}
+  reglages: {nom: 'Réglages', ic: 'gear', k: '', sub: function(){ return 'Ouvrir'; }, go: function(){ goPage('reglages'); }}
 };
 var SC_DEFAUT = ['minuteur', 'carbu', 'meteo', 'avenir'];
 function scList(){ var l = loadJSON('ecran-raccourcis', null); if(!l || l.length !== 4) l = SC_DEFAUT.slice(); return l.map(function(k){ return SHORTCUTS[k] ? k : 'reglages'; }); }
@@ -531,7 +546,7 @@ function loadMeteo(){
       '<div><b>' + Math.round(c.apparent_temperature) + '°</b>Ressenti</div>' +
       '<div><b>' + Math.round(d0.temperature_2m_min[0]) + '° / ' + Math.round(d0.temperature_2m_max[0]) + '°</b>Min / max</div>' +
       '<div><b>' + Math.round(c.wind_speed_10m) + ' km/h</b>Vent' + (c.wind_gusts_10m >= 40 ? ', rafales ' + Math.round(c.wind_gusts_10m) : '') + '</div>' +
-      '<div><b>' + Math.round(d0.precipitation_probability_max[0] || 0) + ' %</b>Pluie' + (d0.precipitation_sum[0] >= 1 ? ' · ' + Math.round(d0.precipitation_sum[0]) + ' mm' : '') + '</div>';
+      '<div><b>' + Math.round(d0.precipitation_probability_max[0] || 0) + ' %</b>Pluie' + (d0.precipitation_sum[0] >= 1 ? ' ' + Math.round(d0.precipitation_sum[0]) + ' mm' : '') + '</div>';
     $('fc').innerHTML = forecastHtml(m, 7);
     safe(renderInfos); safe(renderShortcuts);
     if(curPage === 'infos') safe(renderMeteoDetail);
@@ -1030,6 +1045,7 @@ function fillSettings(){
   var l = scList(), opts = function(sel){ var o = ''; for(var k in SHORTCUTS) o += '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + esc(SHORTCUTS[k].nom) + '</option>'; return o; };
   $('scsel').innerHTML = l.map(function(k, i){ return '<label class="lb">Tuile ' + (i + 1) + '</label><select class="fld" data-sci="' + i + '">' + opts(k) + '</select>'; }).join('');
   $$('#scsel select').forEach(function(s){ s.addEventListener('change', function(){ var cur = scList(); cur[parseInt(s.getAttribute('data-sci'), 10)] = s.value; store('ecran-raccourcis', JSON.stringify(cur)); renderShortcuts(); toast('Raccourcis enregistrés sur cet appareil'); }); });
+  $('vgrand').value = grand() ? '1' : '0';
   var bk = loadJSON('ecran-sauvegarde', null);
   $('bkinfo').textContent = bk && bk.at ? 'Dernière copie automatique sur cet appareil : ' + new Date(bk.at).toLocaleDateString('fr-FR') + ' à ' + hm(bk.at) + '.' : 'Pas encore de copie automatique sur cet appareil.';
 }
@@ -1049,6 +1065,7 @@ function bindSettings(){
     var up = {membres: m.length ? m : null}; if(v) up.ville = v;
     root.child('config').update(up).then(function(){ $('cmsg').textContent = 'Enregistré ✓'; }, function(){ $('cmsg').textContent = 'Impossible d\'enregistrer'; });
   });
+  $('vgrand').addEventListener('change', function(){ store('ecran-grand', this.value === '1' ? '1' : null); applyGrand(); setTimeout(function(){ safe(renderHomeCourses); safe(renderHomeTaches); safe(renderEvents); }, 50); toast('Taille du texte enregistrée sur cet appareil'); });
   $('bkdl').addEventListener('click', exportData);
   $('bkrest').addEventListener('click', function(){
     var bk = loadJSON('ecran-sauvegarde', null);
@@ -1117,6 +1134,7 @@ function start(code){
     show('login', false); show('app', true);
     config = s.val();
     if(started) return; started = true;
+    applyGrand();
     fillIcons(document);
     $('tpr1').innerHTML = tmButtons();
     $$('select[name=rep]').forEach(function(x){ x.innerHTML = repOptions(''); });
