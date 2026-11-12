@@ -259,13 +259,22 @@ function icon(c, day){
 }
 function loadMeteo(){
   var ville = config && config.ville;
-  $('wcity').textContent = ville || 'Météo';
+  $('wcity').textContent = ville ? ville + (geo && geo.ville === ville && geo.cp ? ' (' + geo.cp.slice(0, 2) + ')' : '') : 'Météo';
   if(!ville){ $('mt').textContent = '–'; $('ms').textContent = 'Ville à régler'; $('mc').textContent = ''; return; }
   var p = (geo && geo.ville === ville) ? Promise.resolve(geo) :
-    fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=fr&name=' + encodeURIComponent(ville))
+    fetch('https://geocoding-api.open-meteo.com/v1/search?count=10&language=fr&countryCode=FR&name=' + encodeURIComponent(ville))
       .then(function(r){ return r.json(); })
-      .then(function(d){ if(!d.results || !d.results.length) throw new Error('ville'); geo = {ville: ville, lat: d.results[0].latitude, lon: d.results[0].longitude, cp: (d.results[0].postcodes || [])[0] || ''}; return geo; });
+      .then(function(d){
+        var res = (d.results || []).filter(function(x){ return x.country_code === 'FR'; });
+        if(!res.length) throw new Error('ville');
+        var nv = normTxt(ville), best = null;
+        res.forEach(function(x){ if(!best && normTxt(x.name) === nv) best = x; });
+        best = best || res[0];
+        geo = {ville: ville, lat: best.latitude, lon: best.longitude, cp: (best.postcodes || [])[0] || '', dep: best.admin2 || ''};
+        return geo;
+      });
   p.then(function(g){
+    $('wcity').textContent = ville + (g.cp ? ' (' + g.cp.slice(0, 2) + ')' : '');
     if(!carbu || Date.now() - carbu.at.getTime() > 1800000) setTimeout(function(){ try { loadCarbu(); } catch(e){ $('carbul').innerHTML = '<div class="empty">Erreur : ' + esc(e.message) + '</div>'; } }, 10);
     return fetch('https://api.open-meteo.com/v1/forecast?timezone=Europe%2FParis&forecast_days=7&latitude=' + g.lat + '&longitude=' + g.lon +
       '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code&hourly=precipitation_probability,temperature_2m,weather_code,wind_gusts_10m,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max,precipitation_sum&wind_speed_unit=kmh');
