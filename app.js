@@ -188,6 +188,7 @@ function loadMeteo(){
       '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code&hourly=precipitation_probability,temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max,precipitation_sum&wind_speed_unit=kmh');
   }).then(function(r){ return r.json(); }).then(function(m){
     lastMeteo = m;
+    try { renderGel(m); } catch(e){}
     var t = Math.round(m.current.temperature_2m), code = m.current.weather_code;
     $('mt').textContent = t + '°';
     $('mi').textContent = icon(code);
@@ -323,6 +324,38 @@ function carbuSheet(){
     });
   });
   return h;
+}
+
+/* ---------- Wi-Fi invités ---------- */
+function wifiEsc(t){ return String(t || '').replace(/([\;,:"])/g, '\\$1'); }
+function wifiQr(w, cell){
+  if(!window.qrcode) return '';
+  var q = qrcode(0, 'M');
+  q.addData('WIFI:T:' + (w.type || 'WPA') + ';S:' + wifiEsc(w.ssid) + ';' + (w.type === 'nopass' ? '' : 'P:' + wifiEsc(w.pass) + ';') + ';');
+  q.make();
+  return q.createSvgTag(cell || 4, 0);
+}
+function renderWifi(){
+  var w = config && config.wifi;
+  if(!w || !w.ssid){ $('wifiw').innerHTML = '<div class="empty">Ajoute ton Wi-Fi dans Réglages, en bas de la page</div>'; return; }
+  var svg = wifiQr(w, 4);
+  $('wifiw').innerHTML = (svg ? '<div class="qr">' + svg + '</div>' : '') + '<div class="wn">' + esc(w.ssid) + '</div><div class="wp">' + (w.type === 'nopass' ? 'Sans mot de passe' : 'Scanne avec l\'appareil photo') + '</div>';
+}
+
+/* ---------- alerte gel et pare-brise ---------- */
+function renderGel(m){
+  var el = $('gel'), now = new Date(), h = now.getHours(), ht = m.hourly.temperature_2m, msg = '';
+  var minRange = function(a, b){ var mn = 99, at = -1; for(var i = a; i <= b && i < ht.length; i++){ if(ht[i] < mn){ mn = ht[i]; at = i; } } return {t: mn, h: at % 24}; };
+  if(h >= 15){
+    var n = minRange(h + 1, 24 + 9);
+    if(n.t <= 0) msg = '<b>❄︎ Gel cette nuit</b> ' + Math.round(n.t) + '° vers ' + n.h + ' h · pense à couvrir le pare-brise';
+    else if(n.t <= 3) msg = '<b>❄︎ Risque de givre cette nuit</b> ' + Math.round(n.t) + '° au plus bas · pare-brise à prévoir demain matin';
+  } else if(h >= 4 && h < 11){
+    var mo = minRange(Math.max(0, h - 6), h);
+    if(mo.t <= 0 || m.current.temperature_2m <= 1) msg = '<b>❄︎ Gel ce matin</b> ' + Math.round(Math.min(mo.t, m.current.temperature_2m)) + '° · prévois 5 minutes pour dégivrer la voiture';
+    else if(mo.t <= 3) msg = '<b>❄︎ Givre possible ce matin</b> ' + Math.round(mo.t) + '° au plus bas · jette un œil au pare-brise';
+  }
+  if(msg){ el.innerHTML = msg; el.className = 'gel'; } else el.className = 'gel hide';
 }
 
 /* ---------- petit mot ---------- */
@@ -474,6 +507,10 @@ function openSheet(kind){
       (mm.ingredients || []).forEach(function(x){ var k = x.toLowerCase(); if(!seen[k]){ seen[k] = 1; all.push(x); } });
     });
     if(all.length) h += ingHtml(all).replace('<div class="shead">Ingrédients</div>', '<div class="shead">Tous les ingrédients de la semaine</div>');
+  } else if(kind === 'wifi'){
+    var w = (config && config.wifi) || {};
+    t = 'Wi-Fi invités';
+    h = w.ssid ? '<div class="qr qrbig">' + wifiQr(w, 8) + '</div><div class="wn" style="font-size:22px">' + esc(w.ssid) + '</div>' + (w.type !== 'nopass' ? '<div class="wp" style="font-size:16px;color:#1c1c1e;margin-top:8px">Mot de passe : <b>' + esc(w.pass) + '</b></div>' : '') + '<div class="sub" style="text-align:center;margin-top:12px">Ouvre l\'appareil photo du téléphone et vise le code pour se connecter.</div>' : '<div class="empty">Ajoute ton Wi-Fi dans Réglages, en bas de la page.</div>';
   } else if(kind === 'carbu'){
     t = 'Carburant'; h = carbuSheet();
   } else if(kind === 'mot'){
@@ -529,7 +566,7 @@ function openSheet(kind){
   if(kind === 'mot') $('mot2ok').addEventListener('click', function(){ $('mot').value = $('mot2').value; saveMot(); closeSheet(); });
 }
 function bindSheets(){
-  var map = [['.w.menu', 'menu'], ['.w.carbu', 'carbu'], ['.w.wx', 'meteo'], ['.w.wx2', 'meteo'], ['.w.cal', 'agenda'], ['.rem.or', 'courses'], ['.rem.bl', 'taches'], ['.w.plat', 'plat'], ['.w.note', 'mot']];
+  var map = [['.w.wifi', 'wifi'], ['.w.menu', 'menu'], ['.w.carbu', 'carbu'], ['.w.wx', 'meteo'], ['.w.wx2', 'meteo'], ['.w.cal', 'agenda'], ['.rem.or', 'courses'], ['.rem.bl', 'taches'], ['.w.plat', 'plat'], ['.w.note', 'mot']];
   map.forEach(function(x){
     var el = document.querySelector(x[0]); if(!el) return;
     el.className += ' tap';
@@ -583,6 +620,7 @@ function bind(){
   }
   $('sopen').addEventListener('click', function(){
     show('settings', true); $('cv').value = config && config.ville ? config.ville : ''; $('cmsg').textContent = '';
+    var wf = (config && config.wifi) || {}; $('wssid').value = wf.ssid || ''; $('wpass').value = wf.pass || ''; $('wtype').value = wf.type || 'WPA';
     var c = veilleCfg(); $('vdelay').value = String(c.delay); $('vnuit').value = c.nuit ? '1' : '0'; $('vdeb').value = String(c.debut); $('vfin').value = String(c.fin);
   });
   $('vopen').addEventListener('click', function(e){ e.stopPropagation(); setTimeout(goVeille, 50); });
@@ -592,6 +630,11 @@ function bind(){
   };
   ['vdelay', 'vnuit', 'vdeb', 'vfin'].forEach(function(id){ $(id).addEventListener('change', saveV); });
   $('cclose').addEventListener('click', function(){ show('settings', false); });
+  $('wsave').addEventListener('click', function(){
+    var w = {ssid: $('wssid').value.trim().slice(0, 64), pass: $('wpass').value.slice(0, 64), type: $('wtype').value};
+    $('wmsg').textContent = 'Enregistrement…';
+    root.child('config/wifi').set(w).then(function(){ $('wmsg').textContent = 'Enregistré'; }, function(){ $('wmsg').textContent = 'Impossible d\'enregistrer'; });
+  });
   $('csave').addEventListener('click', function(){
     var v = $('cv').value.trim().slice(0, 60);
     $('cmsg').textContent = 'Enregistrement…';
@@ -610,7 +653,7 @@ function start(code){
     bind();
     watchList('courses'); watchList('taches');
     watchMot(); watchDates(); bindTimer(); bindSheets();
-    root.child('config').on('value', function(s){ config = s.val(); loadMeteo(); });
+    root.child('config').on('value', function(s){ config = s.val(); loadMeteo(); renderWifi(); });
     loadJour();
     setInterval(loadJour, 30 * 60000);
     setInterval(loadMeteo, 30 * 60000);

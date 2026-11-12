@@ -160,6 +160,14 @@ body.night .vinfo span{font-size:20px;opacity:.85}
 .crow{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid rgba(60,60,67,.12);color:#1c1c1e;text-decoration:none;font-size:15px}
 .crow .cp{font-size:20px;font-weight:700;color:#34c759;width:100px;flex-shrink:0}
 body.night .vigi{display:none}
+.gel{margin:0 0 8px;padding:12px 18px;border-radius:20px;color:#fff;font-size:17px;background:linear-gradient(90deg,#3d7bd9,#5bb5f0);box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.gel b{font-weight:700;margin-right:6px}
+body.night .gel{display:none !important}
+.qr{background:#fff;border-radius:14px;padding:8px;display:block;margin:4px auto 8px;width:100%;max-width:170px}
+.qr svg,.qr img{width:100%;height:auto;display:block}
+.wn{font-size:14px;font-weight:700;text-align:center;word-wrap:break-word}
+.wp{font-size:12px;color:#8e8e93;text-align:center;word-wrap:break-word;margin-top:2px}
+.qrbig{max-width:340px;margin:10px auto}
 .tap{cursor:pointer;-webkit-transition:-webkit-transform .15s;transition:transform .15s}
 .tap:active{-webkit-transform:scale(.98);transform:scale(.98)}
 #sheet{position:fixed;left:0;top:0;right:0;bottom:0;z-index:50;background:rgba(10,12,30,.45);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:40px 16px}
@@ -205,6 +213,7 @@ body.night .vigi{display:none}
   <button type="button" id="vopen" class="vbtn" aria-label="Mettre en veille"><span class="vm">☾</span>Veille</button>
   <div class="lock"><div id="lockbox"><div class="date" id="date"></div><div class="clk" id="clk">--:--</div><div class="vinfo" id="vinfo"></div></div></div>
 
+  <div id="gel" class="gel hide"></div>
   <a id="vigi" class="vigi hide" href="https://vigilance.meteofrance.fr/" target="_blank" rel="noopener"></a>
   <div class="grid">
     <div class="c2"><div class="w wx">
@@ -280,7 +289,12 @@ body.night .vigi{display:none}
     </div></div>
 
 
-    <div class="c3" style="width:75%;padding:9px"><div class="w cd">
+    <div class="c1"><div class="w wifi">
+      <div class="wt"><span>📶 Wi-Fi invités</span></div>
+      <div id="wifiw"><div class="empty">Ajoute ton Wi-Fi dans Réglages</div></div>
+    </div></div>
+
+    <div class="c2"><div class="w cd">
       <div class="wt"><span>À venir</span></div>
       <div id="dates"><div class="empty">Chargement…</div></div>
       <form id="df"><input id="dt" placeholder="Vacances, anniversaire…" style="flex:2"><input id="dd" type="date" style="flex:1"><button type="submit">+</button></form>
@@ -292,6 +306,11 @@ body.night .vigi{display:none}
     <label for="cv">Ville pour la météo</label>
     <input id="cv" placeholder="Pau">
     <div style="margin-top:12px"><button class="main" id="csave" type="button">Enregistrer la ville</button> <span id="cmsg0"></span></div>
+    <div style="font-size:17px;font-weight:700;margin-top:22px">Wi-Fi invités</div>
+    <label for="wssid">Nom du réseau</label><input id="wssid" autocomplete="off" autocapitalize="none" autocorrect="off" placeholder="Livebox-1234">
+    <label for="wpass">Mot de passe</label><input id="wpass" autocomplete="off" autocapitalize="none" autocorrect="off" placeholder="mot de passe du Wi-Fi">
+    <label for="wtype">Sécurité</label><select id="wtype" class="vsel"><option value="WPA">WPA / WPA2 / WPA3 (le plus courant)</option><option value="WEP">WEP</option><option value="nopass">Aucun mot de passe</option></select>
+    <div style="margin-top:12px"><button class="main" id="wsave" type="button">Enregistrer le Wi-Fi</button> <span id="wmsg" class="sub"></span></div>
     <div style="font-size:17px;font-weight:700;margin-top:22px">Veille <span class="sub" style="font-weight:400">(réglée pour cet appareil)</span></div>
     <label for="vdelay">Mise en veille après</label>
     <select id="vdelay" class="vsel"><option value="0">Jamais</option><option value="2">2 min sans toucher l'écran</option><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">1 heure</option></select>
@@ -301,13 +320,14 @@ body.night .vigi{display:none}
     <div style="margin-top:16px"> <button id="cclose" type="button">Fermer</button> <span id="cmsg" class="sub"></span></div>
   </div>
 
-  <div class="st"><span id="st">Connexion…</span> · <span id="ver">version 12/11 14:45</span> · <button class="link" type="button" id="sopen">Réglages</button></div>
+  <div class="st"><span id="st">Connexion…</span> · <span id="ver">version 12/11 14:54</span> · <button class="link" type="button" id="sopen">Réglages</button></div>
 </div>
 
 <div id="sheet" class="hide"><div class="panel" id="sheetpanel"><div class="shtop"><h2 id="sheettitle"></h2><button type="button" id="sheetclose" aria-label="Fermer">✕</button></div><div id="sheetbody"></div></div></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="app.js?v=1794491128"></script>
+<script src="app.js?v=1794491649"></script>
 </body>
 </html>
