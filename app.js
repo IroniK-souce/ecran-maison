@@ -1247,11 +1247,21 @@ function start(code){
     var lastDay = new Date().getDate();
     setInterval(function(){ if(new Date().getDate() !== lastDay){ lastDay = new Date().getDate(); loadJour(); renderDates(); safe(loadMeteo); resetRecurring('taches'); renderList('taches'); } }, 60000);
   }, function(){
-    store(KEY, null); root = null;
-    show('app', false); show('login', true);
-    $('lmsg').textContent = 'Code incorrect ou pas de connexion';
+    root = null;
+    if(started) return;
+    if(load(KEY) === code){
+      /* code déjà connu de cet appareil : on le garde et on réessaie (coupure réseau passagère) */
+      show('app', false); show('login', true);
+      $('lc').value = code;
+      $('lmsg').textContent = 'Connexion impossible pour le moment, nouvel essai dans 15 secondes…';
+      clearTimeout(retryT); retryT = setTimeout(function(){ start(code); }, 15000);
+    } else {
+      show('app', false); show('login', true);
+      $('lmsg').textContent = 'Code incorrect ou pas de connexion';
+    }
   });
 }
+var retryT = null;
 
 firebase.initializeApp(FIREBASE);
 var fromHash = (location.hash || '').replace(/^#/, '');
