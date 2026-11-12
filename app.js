@@ -89,7 +89,7 @@ function loadJour(){
 var WMO = {0:'Ciel dégagé',1:'Plutôt dégagé',2:'Quelques nuages',3:'Couvert',45:'Brouillard',48:'Brouillard',51:'Bruine',53:'Bruine',55:'Bruine',61:'Pluie faible',63:'Pluie',65:'Forte pluie',66:'Pluie verglaçante',67:'Pluie verglaçante',71:'Neige faible',73:'Neige',75:'Forte neige',80:'Averses',81:'Averses',82:'Fortes averses',95:'Orages',96:'Orages',99:'Orages'};
 var geo = null;
 function icon(c, day){
-  if(c === 0) return !day && (new Date().getHours() >= 19 || new Date().getHours() < 7) ? '🌙' : '☀️';
+  if(c === 0) return (day === false || (day === undefined && (new Date().getHours() >= 19 || new Date().getHours() < 7))) ? '🌙' : '☀️';
   if(c <= 2) return '⛅'; if(c === 3) return '☁️'; if(c <= 48) return '🌫️';
   if(c >= 71 && c <= 77) return '❄️'; if(c >= 95) return '⛈️'; return '🌧️';
 }
@@ -103,7 +103,7 @@ function loadMeteo(){
       .then(function(d){ if(!d.results || !d.results.length) throw new Error('ville'); geo = {ville: ville, lat: d.results[0].latitude, lon: d.results[0].longitude}; return geo; });
   p.then(function(g){
     return fetch('https://api.open-meteo.com/v1/forecast?timezone=Europe%2FParis&forecast_days=7&latitude=' + g.lat + '&longitude=' + g.lon +
-      '&current=temperature_2m,weather_code&hourly=precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset');
+      '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code&hourly=precipitation_probability,temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max,precipitation_sum&wind_speed_unit=kmh');
   }).then(function(r){ return r.json(); }).then(function(m){
     var t = Math.round(m.current.temperature_2m), code = m.current.weather_code;
     $('mt').textContent = t + '°';
@@ -114,10 +114,28 @@ function loadMeteo(){
     if(pluie !== null) resume = (pluie <= h ? 'Pluie en ce moment' : 'Pluie vers ' + pluie + 'h') + ' · max ' + Math.round(m.daily.temperature_2m_max[0]) + '°';
     $('ms').textContent = resume;
     $('mc').textContent = pluie !== null ? 'Prends un parapluie' : (t <= 5 ? 'Couvre-toi bien' : '');
-    var fh = '', dd = m.daily;
-    for(var k = 0; k < dd.time.length && k < 7; k++){
-      var dt = new Date(dd.time[k] + 'T12:00:00');
-      fh += '<div class="fd"><div>' + (k === 0 ? 'Auj.' : JOURS[dt.getDay()].slice(0, 3) + '.') + '</div><div class="i">' + icon(dd.weather_code[k], true) + '</div><div>' + Math.round(dd.temperature_2m_max[k]) + '°</div><div class="lo">' + Math.round(dd.temperature_2m_min[k]) + '°</div></div>';
+    var c = m.current, d0 = m.daily, uv = Math.round(d0.uv_index_max[0] || 0);
+    $('wst').innerHTML =
+      '<div><b>' + Math.round(c.apparent_temperature) + '°</b>Ressenti</div>' +
+      '<div><b>' + Math.round(d0.temperature_2m_min[0]) + '° / ' + Math.round(d0.temperature_2m_max[0]) + '°</b>Min / max</div>' +
+      '<div><b>' + Math.round(c.wind_speed_10m) + ' km/h</b>Vent' + (c.wind_gusts_10m >= 40 ? ', rafales ' + Math.round(c.wind_gusts_10m) : '') + '</div>' +
+      '<div><b>' + Math.round(d0.precipitation_probability_max[0] || 0) + ' %</b>Pluie' + (d0.precipitation_sum[0] >= 1 ? ' · ' + Math.round(d0.precipitation_sum[0]) + ' mm' : '') + '</div>' +
+      '<div><b>' + Math.round(c.relative_humidity_2m) + ' %</b>Humidité</div>' +
+      '<div><b>' + uv + '</b>UV ' + (uv <= 2 ? 'faible' : uv <= 5 ? 'modéré' : uv <= 7 ? 'élevé' : 'très élevé') + '</div>';
+    var hh = '', ht = m.hourly.temperature_2m, hc = m.hourly.weather_code;
+    for(var j = h + 1; j <= h + 5 && j < ht.length; j++){
+      hh += '<div>' + (j % 24) + 'h<div class="hi">' + icon(hc[j], (j % 24) >= 7 && (j % 24) < 19) + '</div>' + Math.round(ht[j]) + '°</div>';
+    }
+    $('whr').innerHTML = hh;
+    var fh = '', dd = m.daily, n = Math.min(7, dd.time.length), wmin = 99, wmax = -99;
+    for(var q = 0; q < n; q++){ wmin = Math.min(wmin, dd.temperature_2m_min[q]); wmax = Math.max(wmax, dd.temperature_2m_max[q]); }
+    var span = Math.max(1, wmax - wmin);
+    for(var k = 0; k < n; k++){
+      var dt = new Date(dd.time[k] + 'T12:00:00'), lo = dd.temperature_2m_min[k], hi = dd.temperature_2m_max[k];
+      var left = (lo - wmin) / span * 100, width = Math.max(6, (hi - lo) / span * 100);
+      fh += '<div class="fd"><span class="dn">' + (k === 0 ? "Aujourd'hui" : JOURS[dt.getDay()]) + '</span><span class="i">' + icon(dd.weather_code[k], true) + '</span>' +
+        '<span class="pp">' + (dd.precipitation_probability_max[k] >= 30 ? Math.round(dd.precipitation_probability_max[k]) + ' %' : '') + '</span>' +
+        '<span class="lo">' + Math.round(lo) + '°</span><span class="rb"><i style="left:' + left.toFixed(1) + '%;width:' + width.toFixed(1) + '%"></i></span><span class="hi">' + Math.round(hi) + '°</span></div>';
     }
     $('fc').innerHTML = fh;
     $('wcity2').textContent = ville;
