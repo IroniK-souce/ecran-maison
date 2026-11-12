@@ -122,6 +122,11 @@ body.night .grid,body.night .st,body.night #sheet{display:none !important}
 body.night .lock{margin-top:28vh;opacity:.4;text-shadow:none}
 body.night .clk{font-size:180px;font-weight:200;letter-spacing:-4px}
 body.night .date{font-size:26px}
+.vinfo{display:none}
+body.night .vinfo{display:block;font-size:30px;margin-top:18px;line-height:1.5}
+body.night .vinfo span{font-size:20px;opacity:.85}
+#lockbox{-webkit-transition:-webkit-transform 2s;transition:transform 2s}
+.vsel{width:100%;font-size:16px;padding:10px 12px;border:0;border-radius:11px;background:rgba(118,118,128,.12);color:#1c1c1e;-webkit-appearance:none}
 .reptag{font-size:12px;color:#007aff;background:rgba(0,122,255,.1);padding:3px 8px;border-radius:8px;margin-left:8px;white-space:nowrap}
 .row .x{background:none;color:#c7c7cc;font-size:20px;padding:2px 8px;margin-left:4px}
 #srep{font-size:16px;margin-right:8px;border:0;border-radius:11px;background:rgba(118,118,128,.12);padding:0 8px;color:#1c1c1e;max-width:150px}
@@ -171,7 +176,7 @@ body.night .date{font-size:26px}
 </div>
 
 <div class="wrap hide" id="app">
-  <div class="lock"><div class="date" id="date"></div><div class="clk" id="clk">--:--</div></div>
+  <div class="lock"><div id="lockbox"><div class="date" id="date"></div><div class="clk" id="clk">--:--</div><div class="vinfo" id="vinfo"></div></div></div>
 
   <div class="grid">
     <div class="c2"><div class="w wx">
@@ -247,16 +252,23 @@ body.night .date{font-size:26px}
     <div style="font-size:17px;font-weight:700">Réglages</div>
     <label for="cv">Ville pour la météo</label>
     <input id="cv" placeholder="Pau">
-    <div style="margin-top:12px"><button class="main" id="csave" type="button">Enregistrer</button> <button id="cclose" type="button">Fermer</button> <span id="cmsg" class="sub"></span></div>
+    <div style="margin-top:12px"><button class="main" id="csave" type="button">Enregistrer la ville</button> <span id="cmsg0"></span></div>
+    <div style="font-size:17px;font-weight:700;margin-top:22px">Veille <span class="sub" style="font-weight:400">(réglée pour cet appareil)</span></div>
+    <label for="vdelay">Mise en veille après</label>
+    <select id="vdelay" class="vsel"><option value="0">Jamais</option><option value="2">2 min sans toucher l'écran</option><option value="5">5 min</option><option value="10">10 min</option><option value="15">15 min</option><option value="30">30 min</option><option value="60">1 heure</option></select>
+    <label for="vnuit">Mode nuit</label>
+    <div style="display:flex;align-items:center"><select id="vnuit" class="vsel" style="width:auto;margin-right:8px"><option value="1">Activé</option><option value="0">Désactivé</option></select>de <select id="vdeb" class="vsel" style="width:auto;margin:0 8px"><option value="0">0 h</option><option value="1">1 h</option><option value="2">2 h</option><option value="3">3 h</option><option value="4">4 h</option><option value="5">5 h</option><option value="6">6 h</option><option value="7">7 h</option><option value="8">8 h</option><option value="9">9 h</option><option value="10">10 h</option><option value="11">11 h</option><option value="12">12 h</option><option value="13">13 h</option><option value="14">14 h</option><option value="15">15 h</option><option value="16">16 h</option><option value="17">17 h</option><option value="18">18 h</option><option value="19">19 h</option><option value="20">20 h</option><option value="21">21 h</option><option value="22">22 h</option><option value="23">23 h</option></select> à <select id="vfin" class="vsel" style="width:auto;margin-left:8px"><option value="0">0 h</option><option value="1">1 h</option><option value="2">2 h</option><option value="3">3 h</option><option value="4">4 h</option><option value="5">5 h</option><option value="6">6 h</option><option value="7">7 h</option><option value="8">8 h</option><option value="9">9 h</option><option value="10">10 h</option><option value="11">11 h</option><option value="12">12 h</option><option value="13">13 h</option><option value="14">14 h</option><option value="15">15 h</option><option value="16">16 h</option><option value="17">17 h</option><option value="18">18 h</option><option value="19">19 h</option><option value="20">20 h</option><option value="21">21 h</option><option value="22">22 h</option><option value="23">23 h</option></select></div>
+    <div class="sub" id="vmsg" style="margin-top:8px">Pendant la veille, l'écran affiche juste l'heure, la météo et le plat du soir, en sombre. Touche l'écran pour le réveiller.</div>
+    <div style="margin-top:16px"> <button id="cclose" type="button">Fermer</button> <span id="cmsg" class="sub"></span></div>
   </div>
 
-  <div class="st"><span id="st">Connexion…</span> · <button class="link" type="button" id="sopen">Réglages</button></div>
+  <div class="st"><span id="st">Connexion…</span> · <button class="link" type="button" id="vopen">☾ Veille</button> · <button class="link" type="button" id="sopen">Réglages</button></div>
 </div>
 
 <div id="sheet" class="hide"><div class="panel" id="sheetpanel"><div class="shtop"><h2 id="sheettitle"></h2><button type="button" id="sheetclose" aria-label="Fermer">✕</button></div><div id="sheetbody"></div></div></div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="app.js?v=1794488682"></script>
+<script src="app.js?v=1794488937"></script>
 </body>
 </html>

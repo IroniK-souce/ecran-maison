@@ -35,30 +35,52 @@ function tick(){
   $('calnum').textContent = d.getDate();
 }
 
-/* ---------- mode nuit, retour à l'accueil, rechargement nocturne ---------- */
-var lastTouch = Date.now(), wakeUntil = 0, loadedAt = Date.now();
+/* ---------- veille, mode nuit, retour à l'accueil, rechargement nocturne ---------- */
+var lastTouch = Date.now(), wakeUntil = 0, loadedAt = Date.now(), forced = false, lastDrift = 0;
+function veilleCfg(){
+  var c = null; try { c = JSON.parse(localStorage.getItem('ecran-veille') || 'null'); } catch(e){}
+  c = c || {};
+  return {delay: typeof c.delay === 'number' ? c.delay : 10, nuit: c.nuit !== false, debut: typeof c.debut === 'number' ? c.debut : 22, fin: typeof c.fin === 'number' ? c.fin : 7};
+}
+function isSleeping(){ return document.body.className.indexOf('night') >= 0; }
 function nightCheck(d){
-  var h = d.getHours(), night = (h >= 22 || h < 7) && Date.now() > wakeUntil;
+  var cfg = veilleCfg(), h = d.getHours(), now = Date.now();
+  var inNight = cfg.debut > cfg.fin ? (h >= cfg.debut || h < cfg.fin) : (h >= cfg.debut && h < cfg.fin);
+  var sleep = forced || (cfg.delay > 0 && now - lastTouch > cfg.delay * 60000) || (cfg.nuit && inNight && now > wakeUntil);
   var cls = document.body.className.replace(/\s*night/g, '');
-  document.body.className = night ? cls + ' night' : cls;
-  if(Date.now() - lastTouch > 60000){
-    var a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA');
+  document.body.className = sleep ? cls + ' night' : cls;
+  if(sleep){
+    $('vinfo').innerHTML = esc($('mt').textContent) + ' ' + esc($('mi').textContent) + (jour && jour.plat && jour.plat.nom ? '<br><span>Ce soir : ' + esc(jour.plat.nom) + '</span>' : '');
+    if(now - lastDrift > 60000){
+      lastDrift = now;
+      var x = Math.round(Math.random() * 80 - 40), y = Math.round(Math.random() * 60 - 30);
+      $('lockbox').style.webkitTransform = $('lockbox').style.transform = 'translate(' + x + 'px,' + y + 'px)';
+    }
+  } else { $('lockbox').style.webkitTransform = $('lockbox').style.transform = ''; }
+  if(now - lastTouch > 60000){
+    var a = document.activeElement, typing = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT');
     if(!typing){
       if(sheetKind) closeSheet();
       if((window.pageYOffset || document.documentElement.scrollTop) > 0) window.scrollTo(0, 0);
     }
   }
-  if(h === 3 && d.getMinutes() >= 30 && d.getMinutes() < 45 && Date.now() - loadedAt > 3600000 && !sheetKind){
-    location.replace(location.pathname + '?r=' + Date.now() + location.hash);
+  if(h === 3 && d.getMinutes() >= 30 && d.getMinutes() < 45 && now - loadedAt > 3600000 && !sheetKind){
+    location.replace(location.pathname + '?r=' + now + location.hash);
   }
 }
-function touched(){
-  lastTouch = Date.now();
-  if(document.body.className.indexOf('night') >= 0){ wakeUntil = Date.now() + 120000; nightCheck(new Date()); }
+function touched(e){
+  var wasAsleep = isSleeping();
+  lastTouch = Date.now(); forced = false;
+  if(wasAsleep){
+    wakeUntil = Date.now() + 120000;
+    nightCheck(new Date());
+    if(e && e.type !== 'keydown'){ e.preventDefault(); e.stopPropagation(); }
+  }
 }
-document.addEventListener('touchstart', touched, true);
+document.addEventListener('touchstart', touched, {capture: true, passive: false});
 document.addEventListener('mousedown', touched, true);
 document.addEventListener('keydown', touched, true);
+function goVeille(){ forced = true; if(sheetKind) closeSheet(); window.scrollTo(0, 0); nightCheck(new Date()); }
 
 /* ---------- listes ---------- */
 function renderList(name){
@@ -423,7 +445,16 @@ function bind(){
       });
     })(clears[ci]);
   }
-  $('sopen').addEventListener('click', function(){ show('settings', true); $('cv').value = config && config.ville ? config.ville : ''; $('cmsg').textContent = ''; });
+  $('sopen').addEventListener('click', function(){
+    show('settings', true); $('cv').value = config && config.ville ? config.ville : ''; $('cmsg').textContent = '';
+    var c = veilleCfg(); $('vdelay').value = String(c.delay); $('vnuit').value = c.nuit ? '1' : '0'; $('vdeb').value = String(c.debut); $('vfin').value = String(c.fin);
+  });
+  $('vopen').addEventListener('click', function(e){ e.stopPropagation(); setTimeout(goVeille, 50); });
+  var saveV = function(){
+    var c = {delay: parseInt($('vdelay').value, 10), nuit: $('vnuit').value === '1', debut: parseInt($('vdeb').value, 10), fin: parseInt($('vfin').value, 10)};
+    try { localStorage.setItem('ecran-veille', JSON.stringify(c)); $('vmsg').textContent = 'Enregistré sur cet appareil'; } catch(e){ $('vmsg').textContent = 'Impossible d\'enregistrer sur cet appareil'; }
+  };
+  ['vdelay', 'vnuit', 'vdeb', 'vfin'].forEach(function(id){ $(id).addEventListener('change', saveV); });
   $('cclose').addEventListener('click', function(){ show('settings', false); });
   $('csave').addEventListener('click', function(){
     var v = $('cv').value.trim().slice(0, 60);
