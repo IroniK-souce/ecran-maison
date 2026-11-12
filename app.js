@@ -285,8 +285,7 @@ function platEmoji(nom){ var n = normTxt(nom); for(var i = 0; i < EMO.length; i+
 function todayItems(name){ var today = new Date().getDay(); return lists[name].filter(function(x){ return x.rep == null || x.rep === today; }); }
 function renderList(name){
   if(name === 'courses'){
-    var n = lists.courses.filter(function(x){ return !x.done; }).length;
-    $('ncourses').textContent = groupCourses(lists.courses).length; $('ncourses2').textContent = n;
+    var ng = groupCourses(lists.courses).length; $('ncourses').textContent = ng; $('ncourses2').textContent = ng;
     $('l-courses').innerHTML = coursesHtml(lists.courses);
     renderChips(); renderHomeCourses();
   } else {
@@ -552,7 +551,8 @@ function meteoDetailHtml(){
   h += '</div><div class="shead" style="color:#9fb0cf">7 jours</div>' + forecastHtml(m, 7);
   return h;
 }
-function renderMeteoDetail(){ $('i-meteo').innerHTML = meteoDetailHtml(); }
+var meteoDone = null;
+function renderMeteoDetail(){ if(lastMeteo && meteoDone === lastMeteo) return; meteoDone = lastMeteo; $('i-meteo').innerHTML = meteoDetailHtml(); }
 
 /* ---------- carburant (prix-carburants.gouv.fr, données ouvertes) ---------- */
 var carbu = null, CARBUS = [['gazole_prix', 'Gazole'], ['e10_prix', 'SP95-E10'], ['sp95_prix', 'SP95'], ['sp98_prix', 'SP98']];
@@ -1081,8 +1081,16 @@ function exportData(){
   root.once('value').then(function(s){
     var d = {app: 'ecran-maison', at: Date.now(), data: pickData(s.val())}, txt = JSON.stringify(d, null, 2);
     var name = 'maison-sauvegarde-' + todayKey(new Date()) + '.json';
+    var a0 = document.createElement('a');
+    if(!('download' in a0)){
+      /* iPad sous iOS 12 : pas de téléchargement possible depuis une app web, on affiche le texte à copier */
+      $('sheettitle').textContent = 'Sauvegarde'; sheetKind = 'backup';
+      $('sheetbody').innerHTML = '<div class="sub">Touchez le texte, « Tout sélectionner », « Copier », puis collez-le dans une note ou un e-mail. Pour restaurer plus tard : enregistrez-le dans Fichiers sous le nom ' + esc(name) + '.</div><textarea class="fld" readonly style="height:300px;margin-top:12px;font-size:13px;font-family:Menlo,monospace;padding:12px">' + esc(txt) + '</textarea>';
+      show('sheet', true);
+      return;
+    }
     try {
-      var blob = new Blob([txt], {type: 'application/json'}), url = URL.createObjectURL(blob), a = document.createElement('a');
+      var blob = new Blob([txt], {type: 'application/json'}), url = URL.createObjectURL(blob), a = a0;
       a.href = url; a.download = name; document.body.appendChild(a); a.click();
       setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 2000);
       $('bkmsg').textContent = 'Sauvegarde créée : ' + name + ' (sur iPad, utilisez « Partager » puis « Enregistrer dans Fichiers »).';
