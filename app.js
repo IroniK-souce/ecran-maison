@@ -450,6 +450,7 @@ function renderEvents(){
 /* plannings de travail (calendriers iCloud, data.json) */
 function fmtH(h){ if(!h) return ''; var p = h.split(':'); return parseInt(p[0], 10) + ' h' + (p[1] && p[1] !== '00' ? ' ' + p[1] : ''); }
 function plage(x){ return fmtH(x.debut) + (x.fin ? '–' + fmtH(x.fin) : ''); }
+function hc(h){ if(!h) return ''; var p = h.split(':'); return parseInt(p[0], 10) + 'h' + (p[1] && p[1] !== '00' ? p[1] : ''); }
 function planningPill(){
   var pl = (jour && jour.planning) || [], now = new Date(), tk = todayKey(now), tmk = todayKey(addDays(now, 1)), hm0 = pad(now.getHours()) + ':' + pad(now.getMinutes()), byNom = {}, out = [];
   pl.forEach(function(x){ var k = (x.qui ? x.qui + ' · ' : '') + x.nom; (byNom[k] = byNom[k] || []).push(x); });
@@ -462,16 +463,45 @@ function planningPill(){
   }
   return out;
 }
-function planningSheet(){
-  var pl = (jour && jour.planning) || [];
-  if(!pl.length) return '';
-  var h = '<div class="shead">Planning de travail · 7 jours</div>', now = new Date();
-  for(var i = 0; i < 7; i++){
-    var d = todayKey(addDays(now, i)), by = {}, keys = [];
-    pl.forEach(function(x){ if(x.date !== d) return; var k = (x.qui ? x.qui + ' · ' : '') + x.nom; if(!by[k]){ by[k] = []; keys.push(k); } by[k].push(plage(x)); });
-    h += '<div class="arow"><span class="ah" style="color:var(--bl);min-width:130px">' + dayLabel(d, true) + '</span>' + (keys.length ? keys.map(function(k){ return esc(k) + ' <span style="font-weight:500">' + by[k].join(', ') + '</span>'; }).join(' · ') : '<span class="sub">Repos</span>') + '</div>';
-  }
-  return h;
+/* vue calendrier : 7 jours, un bloc par service ou rendez-vous */
+function hmin(h){ var p = String(h || '').split(':'); return parseInt(p[0], 10) * 60 + (parseInt(p[1], 10) || 0); }
+function calendarHtml(){
+  var now = new Date(), days = [], blocks = {}, allday = {}, lo = 24 * 60, hi = 0, any = false;
+  for(var i = 0; i < 7; i++){ var dk = todayKey(addDays(now, i)); days.push(dk); blocks[dk] = []; allday[dk] = []; }
+  ((jour && jour.planning) || []).forEach(function(x){
+    if(!blocks[x.date] || !x.debut) return;
+    var a = hmin(x.debut), b = x.fin ? hmin(x.fin) : a + 60; if(b <= a) b = 24 * 60;
+    blocks[x.date].push({a: a, b: b, k: 'work', t: (x.qui ? x.qui + ' · ' : '') + x.nom, h: hc(x.debut) + (x.fin ? '–' + hc(x.fin) : '')}); any = true;
+  });
+  ((jour && jour.agenda) || []).forEach(function(x){
+    if(!blocks[x.date]) return;
+    if(!x.heure){ allday[x.date].push(x.titre); any = true; return; }
+    var a = hmin(x.heure), b = x.fin ? hmin(x.fin) : a + 60; if(b <= a) b = Math.min(24 * 60, a + 60);
+    blocks[x.date].push({a: a, b: b, k: 'rdv', t: x.titre, h: hc(x.heure) + (x.fin ? '–' + hc(x.fin) : '')}); any = true;
+  });
+  if(!any) return '<div class="empty">Rien de prévu ces 7 prochains jours.</div>';
+  days.forEach(function(d){ blocks[d].forEach(function(x){ lo = Math.min(lo, x.a); hi = Math.max(hi, x.b); }); });
+  if(hi === 0){ lo = 9 * 60; hi = 18 * 60; }
+  lo = Math.floor(lo / 60) * 60; hi = Math.ceil(hi / 60) * 60;
+  if(hi - lo < 6 * 60) hi = Math.min(24 * 60, lo + 6 * 60);
+  var H = Math.max(300, Math.min(window.innerHeight - 300, 520)), px = H / (hi - lo), hasAll = days.some(function(d){ return allday[d].length; });
+  var h = '<div class="calw"><div class="cal"><div class="cal-t"><div class="cal-h"></div>' + (hasAll ? '<div class="cal-a"></div>' : '') + '<div class="cal-g" style="height:' + H + 'px">';
+  for(var m = lo; m <= hi; m += 60) h += '<div style="top:' + Math.round((m - lo) * px - 9) + 'px">' + (m / 60 % 24) + ' h</div>';
+  h += '</div></div>';
+  var tk = days[0], nowM = now.getHours() * 60 + now.getMinutes();
+  days.forEach(function(d){
+    var dt = new Date(d + 'T12:00:00');
+    h += '<div class="cal-d' + (d === tk ? ' today' : '') + '"><div class="cal-h">' + JOURS[dt.getDay()].slice(0, 3) + '<b>' + dt.getDate() + '</b></div>';
+    if(hasAll) h += '<div class="cal-a">' + allday[d].map(function(t){ return '<div>' + esc(t) + '</div>'; }).join('') + '</div>';
+    h += '<div class="cal-g" style="height:' + H + 'px;background-size:100% ' + (60 * px).toFixed(2) + 'px">';
+    blocks[d].forEach(function(x){
+      var top = (x.a - lo) * px, ht = Math.max(22, (x.b - x.a) * px - 2), big = ht >= 58;
+      h += '<div class="cal-b ' + x.k + '" style="top:' + top.toFixed(1) + 'px;height:' + ht.toFixed(1) + 'px">' + (big || x.k === 'rdv' ? '<b>' + esc(x.t) + '</b>' : '') + (x.k === 'rdv' && !big && ht < 44 ? '' : '<span>' + esc(x.h) + '</span>') + '</div>';
+    });
+    if(d === tk && nowM >= lo && nowM <= hi) h += '<div class="cal-now" style="top:' + ((nowM - lo) * px).toFixed(1) + 'px"></div>';
+    h += '</div></div>';
+  });
+  return h + '</div></div><div class="sub" style="margin-top:10px"><span class="lg work"></span>Planning de travail &nbsp; <span class="lg rdv"></span>Rendez-vous Antho&amp;Lisa</div>';
 }
 var infoState = {gel: '', alertes: [], vigi: null, offline: false};
 function renderVigi(){
@@ -845,13 +875,8 @@ function closeSheet(){ sheetKind = null; show('sheet', false); document.body.sty
 function openSheet(kind, opt){
   var t = '', h = '';
   if(kind === 'agenda'){
-    t = 'À venir'; var ag = agendaItems(), tk = todayKey(new Date()), last = '';
-    if(!ag.length) h += '<div class="empty">' + (jour && jour.agenda_relie ? 'Aucun rendez-vous aujourd\'hui ni demain dans le calendrier partagé' : 'Agenda pas encore relié') + '</div>';
-    ag.forEach(function(a){
-      if(a.date !== last){ last = a.date; h += '<div class="shead">' + (a.date === tk ? "Aujourd'hui" : 'Demain') + '</div>'; }
-      h += '<div class="arow"><span class="ah">' + esc(a.heure || 'Journée') + '</span>' + esc(a.titre) + '</div>';
-    });
-    h += planningSheet();
+    t = 'À venir';
+    h += (jour && jour.agenda_relie === false ? '<div class="empty">Agenda pas encore relié</div>' : '') + calendarHtml();
     var dl = datesList();
     h += '<div class="shead">Dates à attendre</div>' + (dl.length ? dl.map(function(x){ return '<div class="arow"><span class="ah" style="color:var(--or)">' + (x.n === 0 ? '🎉' : 'J-' + x.n) + '</span>' + esc(x.titre) + '</div>'; }).join('') : '<div class="empty">Aucune</div>');
     h += '<div style="margin-top:16px"><button type="button" class="b" data-act="page" data-p="maison">Gérer les dates</button></div>';
@@ -896,6 +921,7 @@ function openSheet(kind, opt){
   } else return;
   var first = sheetKind !== kind;
   sheetKind = kind;
+  cls($('sheetpanel'), 'wide', kind === 'agenda');
   $('sheettitle').textContent = t;
   $('sheetbody').innerHTML = h;
   if(first){ show('sheet', true); $('sheet').scrollTop = 0; }

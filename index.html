@@ -277,6 +277,34 @@ body.grand .ch h3{font-size:20px}
 .qr{background:#fff;border-radius:16px;padding:10px;display:block;margin:4px auto 10px;width:100%;max-width:330px}
 .qr svg{width:100%;height:auto;display:block}
 
+
+/* vue calendrier */
+#sheet .panel.wide{max-width:980px}
+.calw{overflow-x:auto;-webkit-overflow-scrolling:touch;padding:10px 0 12px}
+.cal{display:flex;min-width:640px}
+.cal-t{width:46px;flex-shrink:0}
+.cal-t .cal-g{background:none;border:0}
+.cal-t .cal-g div{position:absolute;right:8px;font-size:15px;color:var(--tx2);white-space:nowrap}
+.cal-d{flex:1;min-width:0;border-left:1px solid var(--line)}
+.cal-h{height:54px;text-align:center;font-size:15px;font-weight:600;color:var(--tx2);line-height:1.1;padding-top:4px}
+.cal-h b{display:block;font-size:22px;color:var(--tx);margin:2px auto 0;width:36px;height:36px;line-height:36px;border-radius:50%}
+.cal-d.today .cal-h{color:var(--or)}
+.cal-d.today .cal-h b{background:var(--or);color:#1d1305}
+.cal-a{min-height:30px;padding:2px 3px;border-bottom:1px solid var(--line)}
+.cal-a div{font-size:14px;font-weight:600;border-radius:6px;padding:2px 5px;margin-bottom:2px;background:rgba(180,140,255,.22);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-g{position:relative;border-top:1px solid var(--line);background-image:linear-gradient(to bottom,var(--line) 1px,transparent 1px)}
+.cal-b{position:absolute;left:3px;right:3px;border-radius:9px;padding:4px 6px;overflow:hidden;line-height:1.2;font-size:15px;font-weight:600}
+.cal-b b{display:block;font-size:15px;font-weight:700}
+.cal-b span{display:block}
+.cal-b.work{background:rgba(94,168,255,.24);border-left:4px solid var(--bl);color:var(--tx)}
+.cal-b.rdv{background:rgba(180,140,255,.24);border-left:4px solid var(--pu);color:var(--tx)}
+.cal-now{position:absolute;left:-1px;right:0;height:2px;background:var(--rd);z-index:2}
+.cal-now:before{content:"";position:absolute;left:-4px;top:-4px;width:10px;height:10px;border-radius:50%;background:var(--rd)}
+.lg{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px}
+.lg.work{background:var(--bl)}.lg.rdv{background:var(--pu)}
+body.clair .cal-b.work{background:#dce9ff}
+body.clair .cal-b.rdv{background:#ece3ff}
+
 /* toast */
 #toast{position:fixed;left:50%;bottom:26px;z-index:80;display:flex;align-items:center;min-height:56px;padding:6px 8px 6px 20px;border-radius:18px;background:#34373d;color:var(--tx);font-size:16px;font-weight:500;box-shadow:0 14px 40px rgba(0,0,0,.45);-webkit-transform:translate(-50%,260px);transform:translate(-50%,260px);-webkit-transition:-webkit-transform .3s,visibility .3s;transition:transform .3s,visibility .3s;max-width:92%;visibility:hidden}
 #toast.on{-webkit-transform:translate(-50%,0);transform:translate(-50%,0);visibility:visible}
@@ -531,7 +559,7 @@ body.clair .ev .x.c{border-color:#e07a10}
 
     <!-- RÉGLAGES -->
     <section class="page" id="p-reglages">
-      <div class="top ptop"><div><h1>Réglages</h1><div class="dline"><span id="st">Connexion…</span> · <span id="ver">version 12/11 23:30</span></div></div><div class="tright"><div class="clk">--:--</div></div></div>
+      <div class="top ptop"><div><h1>Réglages</h1><div class="dline"><span id="st">Connexion…</span> · <span id="ver">version 12/11 23:45</span></div></div><div class="tright"><div class="clk">--:--</div></div></div>
       <div class="scroll"><div class="sets">
         <div class="card">
           <h3>Foyer</h3>
@@ -587,6 +615,6 @@ body.clair .ev .x.c{border-color:#e07a10}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="app.js?v=1794522028"></script>
+<script src="app.js?v=1794522254"></script>
 </body>
 </html>
