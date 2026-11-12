@@ -62,10 +62,6 @@ form.add input,.inl input{flex:1;margin-right:6px}
 button{font-size:15px;font-weight:600;padding:9px 14px;border:0;border-radius:11px;background:rgba(118,118,128,.12);color:#007aff;-webkit-appearance:none;cursor:pointer}
 form.add button{width:38px;padding:9px 0;font-size:20px;line-height:1}
 button.main{background:#007aff;color:#fff}
-.bud .big{font-size:34px;font-weight:700;letter-spacing:-.5px;margin-top:4px}
-.pbar{height:7px;background:rgba(118,118,128,.16);border-radius:4px;margin-top:10px;overflow:hidden}
-.pbar div{height:7px;background:#34c759;border-radius:4px}
-.pbar div.over{background:#ff3b30}
 .st{font-size:12px;color:rgba(255,255,255,.75);text-align:center;margin-top:12px;padding-bottom:12px}
 .st .link{color:rgba(255,255,255,.95);font-size:12px}
 .set{margin:9px}
@@ -149,27 +145,13 @@ button.main{background:#007aff;color:#fff}
       <div style="text-align:right;margin-top:6px"><button class="link" type="button" data-clear="taches">Retirer les faites</button></div>
     </div></div>
 
-    <div class="c2"><div class="w bud">
-      <div class="wt"><span id="bt">Budget du mois</span><button class="link" type="button" id="bset">Modifier</button></div>
-      <div class="big" id="brest">–</div>
-      <div class="sub" id="bsub"></div>
-      <div class="pbar"><div id="bbar" style="width:0"></div></div>
-      <form id="bdep" class="inl"><input id="bdepv" inputmode="decimal" placeholder="Nouvelle dépense (€)"><button type="submit">Ajouter</button></form>
-      <form id="btot" class="inl hide"><input id="btotv" inputmode="decimal" placeholder="Budget du mois (€)"><button class="main" type="submit">OK</button></form>
-    </div></div>
-
-    <div style="width:100%"><div class="sect">Plus</div></div>
-
     <div class="c2"><div class="w note">
       <div class="wt"><span>Petit mot</span><span class="sub" id="motup"></span></div>
       <textarea id="mot" placeholder="Laisse un mot à l'autre…"></textarea>
     </div></div>
 
-    <div class="c2"><div class="w wx2">
-      <div class="wt" style="color:#fff"><span>Prochains jours</span><span id="wcity2" style="text-transform:none;font-weight:500;opacity:.85"></span></div>
-      <div class="fc" id="fc"><div class="fd">–</div></div>
-      <div class="sun" id="sun"></div>
-    </div></div>
+
+    <div style="width:100%"><div class="sect">Plus</div></div>
 
     <div class="c1"><div class="w tm" id="tmw">
       <div class="wt"><span>Minuteur</span></div>
@@ -177,7 +159,13 @@ button.main{background:#007aff;color:#fff}
       <div class="pr"><button type="button" data-min="5">5 min</button><button type="button" data-min="10">10</button><button type="button" data-min="20">20</button><button type="button" data-min="45">45</button><button type="button" id="tmstop">Stop</button></div>
     </div></div>
 
-    <div class="c3" style="width:75%;padding:9px"><div class="w cd">
+    <div class="c3" style="width:75%;padding:9px"><div class="w wx2">
+      <div class="wt" style="color:#fff"><span>Prochains jours</span><span id="wcity2" style="text-transform:none;font-weight:500;opacity:.85"></span></div>
+      <div class="fc" id="fc"><div class="fd">–</div></div>
+      <div class="sun" id="sun"></div>
+    </div></div>
+
+    <div class="c3" style="width:100%;padding:9px"><div class="w cd">
       <div class="wt"><span>À venir</span></div>
       <div id="dates"><div class="empty">Chargement…</div></div>
       <form id="df"><input id="dt" placeholder="Vacances, anniversaire…" style="flex:2"><input id="dd" type="date" style="flex:1"><button type="submit">+</button></form>

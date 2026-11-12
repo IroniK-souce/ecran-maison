@@ -10,7 +10,7 @@ var FIREBASE = {
   appId: "1:389932373217:web:3e85d16139ed4d16f193a0"
 };
 var KEY = 'ecran-maison-code';
-var root = null, lists = {courses: [], taches: []}, budget = null, config = null, jour = null;
+var root = null, lists = {courses: [], taches: []}, config = null, jour = null;
 
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -53,25 +53,6 @@ function watchList(name){
     arr.sort(function(a, b){ return a.at - b.at; });
     lists[name] = arr; renderList(name); status('Synchronisé');
   }, function(){ status('Accès refusé · vérifie le code'); });
-}
-
-/* ---------- budget ---------- */
-function renderBudget(){
-  var b = budget || {}, now = new Date(), mk = monthKey(now);
-  var total = b.total || 0, dep = (b.mois === mk) ? (b.depense || 0) : 0;
-  $('bt').textContent = 'Budget ' + MOIS[now.getMonth()];
-  if(!total){ $('brest').textContent = '–'; $('bsub').textContent = 'Touche « Modifier » pour fixer le budget'; $('bbar').style.width = '0'; return; }
-  var rest = total - dep;
-  $('brest').textContent = euro(rest);
-  $('bsub').textContent = 'restants sur ' + euro(total) + ' · ' + euro(dep) + ' dépensés';
-  $('bbar').style.width = Math.min(100, Math.max(0, dep / total * 100)) + '%';
-  $('bbar').className = rest < 0 ? 'over' : '';
-}
-function writeBudget(fields){
-  var b = budget || {}, mk = monthKey(new Date());
-  var data = {total: b.total || 0, mois: mk, depense: (b.mois === mk ? (b.depense || 0) : 0)};
-  for(var k in fields) data[k] = fields[k];
-  root.child('budget').set(data).catch(function(){ status('Budget non enregistré'); });
 }
 
 /* ---------- agenda + plat (data.json mis à jour chaque jour) ---------- */
@@ -252,23 +233,6 @@ function bind(){
       });
     })(clears[ci]);
   }
-  $('bdep').addEventListener('submit', function(e){
-    e.preventDefault();
-    var n = num($('bdepv').value); if(n == null || n === 0) return;
-    $('bdepv').value = '';
-    var b = budget || {}, mk = monthKey(new Date());
-    writeBudget({depense: Math.round(((b.mois === mk ? (b.depense || 0) : 0) + n) * 100) / 100});
-  });
-  $('bset').addEventListener('click', function(){
-    show('btot', $('btot').className.indexOf('hide') >= 0);
-    $('btotv').value = budget && budget.total ? budget.total : '';
-  });
-  $('btot').addEventListener('submit', function(e){
-    e.preventDefault();
-    var n = num($('btotv').value); if(n == null || n <= 0) return;
-    show('btot', false);
-    writeBudget({total: Math.round(n)});
-  });
   $('sopen').addEventListener('click', function(){ show('settings', true); $('cv').value = config && config.ville ? config.ville : ''; $('cmsg').textContent = ''; });
   $('cclose').addEventListener('click', function(){ show('settings', false); });
   $('csave').addEventListener('click', function(){
@@ -289,13 +253,12 @@ function start(code){
     bind();
     watchList('courses'); watchList('taches');
     watchMot(); watchDates(); bindTimer();
-    root.child('budget').on('value', function(s){ budget = s.val(); renderBudget(); });
     root.child('config').on('value', function(s){ config = s.val(); loadMeteo(); });
-    renderBudget(); loadJour();
+    loadJour();
     setInterval(loadJour, 30 * 60000);
     setInterval(loadMeteo, 30 * 60000);
     var lastDay = new Date().getDate();
-    setInterval(function(){ if(new Date().getDate() !== lastDay){ lastDay = new Date().getDate(); loadJour(); renderBudget(); renderDates(); loadMeteo(); } }, 60000);
+    setInterval(function(){ if(new Date().getDate() !== lastDay){ lastDay = new Date().getDate(); loadJour(); renderDates(); loadMeteo(); } }, 60000);
   }, function(){
     store(KEY, null); root = null;
     show('app', false); show('login', true);
