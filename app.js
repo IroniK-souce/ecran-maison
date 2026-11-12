@@ -143,8 +143,27 @@ function renderJour(){
     if(p.image){ $('pimg').innerHTML = '<img alt="" src="' + esc(p.image) + '">'; } else { $('pimg').innerHTML = '🍲'; }
   }
 }
+function renderMenu(){
+  var menu = (jour && jour.menu) || [], tk = todayKey(new Date()), h = '';
+  menu.forEach(function(mm){
+    if(mm.date < tk) return;
+    var d = new Date(mm.date + 'T12:00:00');
+    h += '<div class="mt' + (mm.date === tk ? ' on' : '') + '"><div class="md">' + (mm.date === tk ? "Ce soir" : JOURS[d.getDay()].slice(0, 3) + '. ' + d.getDate()) + '</div><div class="mn">' + esc(mm.nom) + '</div></div>';
+  });
+  $('menul').innerHTML = h || '<div class="empty">Le menu de la semaine arrive à la prochaine mise à jour du matin.</div>';
+}
+function renderVigi(){
+  var v = (jour && jour.vigilance) || {}, n = v.niveau, el = $('vigi');
+  if(n === 'orange' || n === 'rouge'){
+    el.className = 'vigi ' + n;
+    el.innerHTML = '<b>⚠︎ Vigilance ' + n + '</b> ' + esc((v.phenomenes || []).join(', ')) + (v.dep ? ' · ' + esc(v.dep) : '') + (v.fin ? '<span> jusqu\'à ' + esc(v.fin) + '</span>' : '');
+    el.href = v.url && /^https:\/\//.test(v.url) ? v.url : 'https://vigilance.meteofrance.fr/';
+  } else el.className = 'vigi hide';
+  var j = $('vigij');
+  if(n === 'jaune'){ j.textContent = '⚠︎ Vigilance jaune : ' + (v.phenomenes || []).join(', '); j.className = 'vigij'; } else j.className = 'vigij hide';
+}
 function loadJour(){
-  fetch('data.json?t=' + Date.now()).then(function(r){ return r.json(); }).then(function(d){ jour = d; renderJour(); }).catch(function(){});
+  fetch('data.json?t=' + Date.now()).then(function(r){ return r.json(); }).then(function(d){ jour = d; renderJour(); renderMenu(); renderVigi(); }).catch(function(){});
 }
 
 /* ---------- météo (Open-Meteo, sans clé) ---------- */
@@ -164,6 +183,7 @@ function loadMeteo(){
       .then(function(r){ return r.json(); })
       .then(function(d){ if(!d.results || !d.results.length) throw new Error('ville'); geo = {ville: ville, lat: d.results[0].latitude, lon: d.results[0].longitude}; return geo; });
   p.then(function(g){
+    if(!carbu || Date.now() - carbu.at.getTime() > 1800000) setTimeout(loadCarbu, 10);
     return fetch('https://api.open-meteo.com/v1/forecast?timezone=Europe%2FParis&forecast_days=7&latitude=' + g.lat + '&longitude=' + g.lon +
       '&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code&hourly=precipitation_probability,temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max,precipitation_sum&wind_speed_unit=kmh');
   }).then(function(r){ return r.json(); }).then(function(m){
@@ -205,6 +225,43 @@ function loadMeteo(){
   }).catch(function(e){ $('ms').textContent = e && e.message === 'ville' ? 'Ville introuvable' : 'Météo indisponible'; });
 }
 
+
+/* ---------- carburant (prix-carburants.gouv.fr, données ouvertes) ---------- */
+var carbu = null, CARBUS = [['gazole_prix', 'Gazole'], ['e10_prix', 'SP95-E10'], ['sp95_prix', 'SP95'], ['sp98_prix', 'SP98']];
+function distKm(a, b, c, d){ var R = 6371, x = (c - a) * Math.PI / 180, y = (d - b) * Math.PI / 180, q = Math.sin(x / 2) * Math.sin(x / 2) + Math.cos(a * Math.PI / 180) * Math.cos(c * Math.PI / 180) * Math.sin(y / 2) * Math.sin(y / 2); return R * 2 * Math.atan2(Math.sqrt(q), Math.sqrt(1 - q)); }
+function prix(n){ return n.toFixed(3).replace('.', ',') + ' €'; }
+function cap(s){ s = String(s || '').toLowerCase(); return s.replace(/(^|[\s-])\S/g, function(m){ return m.toUpperCase(); }); }
+function loadCarbu(){
+  if(!geo){ $('carbul').innerHTML = '<div class="empty">Règle ta ville dans Réglages</div>'; return; }
+  var url = 'https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/records?limit=100' +
+    '&select=id,adresse,ville,geom,gazole_prix,e10_prix,sp95_prix,sp98_prix' +
+    '&where=' + encodeURIComponent("within_distance(geom, geom'POINT(" + geo.lon + ' ' + geo.lat + ")', 10km)");
+  fetch(url).then(function(r){ return r.json(); }).then(function(d){
+    var st = (d.results || []).map(function(x){ var g = x.geom || {}; x.km = (g.lat != null) ? distKm(geo.lat, geo.lon, g.lat, g.lon) : 99; return x; });
+    carbu = {stations: st, at: new Date()};
+    var h = '';
+    CARBUS.forEach(function(c){
+      var best = st.filter(function(x){ return x[c[0]]; }).sort(function(a, b){ return a[c[0]] - b[c[0]]; })[0];
+      if(best) h += '<div class="cr"><span class="cn">' + c[1] + '</span><span class="cp">' + prix(best[c[0]]) + '</span><span class="cw">' + esc(cap(best.ville)) + ' · ' + best.km.toFixed(1).replace('.', ',') + ' km</span></div>';
+    });
+    $('carbul').innerHTML = h || '<div class="empty">Aucune station trouvée à moins de 10 km</div>';
+    if(sheetKind === 'carbu') $('sheetbody').innerHTML = carbuSheet();
+  }).catch(function(){ $('carbul').innerHTML = '<div class="empty">Prix indisponibles pour le moment</div>'; });
+}
+function carbuSheet(){
+  if(!carbu) return '<div class="empty">Chargement des prix…</div>';
+  var h = '<div class="sub">Les moins chers à moins de 10 km · données prix-carburants.gouv.fr · ' + pad(carbu.at.getHours()) + ':' + pad(carbu.at.getMinutes()) + '</div>';
+  CARBUS.forEach(function(c){
+    var l = carbu.stations.filter(function(x){ return x[c[0]]; }).sort(function(a, b){ return a[c[0]] - b[c[0]]; }).slice(0, 5);
+    if(!l.length) return;
+    h += '<div class="shead">' + c[1] + '</div>';
+    l.forEach(function(x){
+      var g = x.geom || {};
+      h += '<a class="crow" href="https://maps.apple.com/?q=' + encodeURIComponent(cap(x.adresse) + ', ' + cap(x.ville)) + (g.lat != null ? '&ll=' + g.lat + ',' + g.lon : '') + '" target="_blank" rel="noopener"><span class="cp">' + prix(x[c[0]]) + '</span><span style="flex:1;min-width:0">' + esc(cap(x.adresse)) + '<br><span class="sub">' + esc(cap(x.ville)) + ' · ' + x.km.toFixed(1).replace('.', ',') + ' km</span></span><span class="sub">Itinéraire ›</span></a>';
+    });
+  });
+  return h;
+}
 
 /* ---------- petit mot ---------- */
 var motTimer = null, motFocus = false;
@@ -283,6 +340,18 @@ function bindTimer(){
 
 
 /* ---------- widgets cliquables : vue détaillée ---------- */
+var curIng = [];
+function ingHtml(ing){
+  curIng = ing || [];
+  if(!curIng.length) return '';
+  var have = {}; lists.courses.forEach(function(x){ if(!x.done) have[x.name.toLowerCase()] = 1; });
+  var h = '<div class="shead">Ingrédients</div><div class="list big-list" id="ingl">';
+  curIng.forEach(function(x, i){
+    var staple = /^(sel|poivre|sel, poivre|huile|huile d'olive|eau)\b/i.test(x), on = !staple && !have[x.toLowerCase()];
+    h += '<div class="row ing' + (on ? ' sel' : '') + '" data-ing="' + i + '"><span class="box">' + (on ? '✓' : '') + '</span>' + esc(x) + (have[x.toLowerCase()] ? '<span class="reptag">déjà dans la liste</span>' : '') + '</div>';
+  });
+  return h + '</div><button class="main" type="button" id="ingadd" style="width:100%;margin-top:14px;padding:13px">Ajouter à la liste de courses</button><div class="sub" id="ingmsg" style="text-align:center;margin-top:8px">Décoche ce que tu as déjà à la maison.</div>';
+}
 var sheetKind = null;
 function closeSheet(){ sheetKind = null; show('sheet', false); document.body.style.overflow = ''; }
 function rowsHtml(name){
@@ -329,17 +398,22 @@ function openSheet(kind){
     t = 'Ce soir';
     h = '<div class="splat">' + ($('pimg').innerHTML) + '</div><div class="pn" style="font-size:28px;margin-top:14px">' + esc(p.nom || 'En attente de la suggestion du jour') + '</div><div class="ssub">' + esc($('pd').textContent) + (p.portions ? ' · ' + p.portions + ' pers.' : '') + '</div>';
     if(p.url) h += '<a class="btn" href="' + esc(p.url) + '" target="_blank" rel="noopener" style="margin-top:16px">Voir la recette</a>';
-    if(ing.length){
-      var have = {}; lists.courses.forEach(function(x){ if(!x.done) have[x.name.toLowerCase()] = 1; });
-      h += '<div class="shead">Ingrédients</div><div class="list big-list" id="ingl">';
-      ing.forEach(function(x, i){
-        var staple = /^(sel|poivre|sel, poivre|huile|eau)\b/i.test(x), on = !staple && !have[x.toLowerCase()];
-        h += '<div class="row ing' + (on ? ' sel' : '') + '" data-ing="' + i + '"><span class="box">' + (on ? '✓' : '') + '</span>' + esc(x) + (have[x.toLowerCase()] ? '<span class="reptag">déjà dans la liste</span>' : '') + '</div>';
-      });
-      h += '</div><button class="main" type="button" id="ingadd" style="width:100%;margin-top:14px;padding:13px">Ajouter à la liste de courses</button><div class="sub" id="ingmsg" style="text-align:center;margin-top:8px">Décoche ce que tu as déjà à la maison.</div>';
-    }
+    h += ingHtml(ing);
     var rec = ((jour && jour.plats_recents) || []).slice(1, 8);
     if(rec.length) h += '<div class="shead">Déjà proposés</div>' + rec.map(function(x){ return '<div class="arow">' + esc(x) + '</div>'; }).join('');
+  } else if(kind === 'menu'){
+    var menu = (jour && jour.menu) || [], all = [], seen = {};
+    t = 'Menu de la semaine';
+    if(!menu.length) h = '<div class="empty">Le menu de la semaine arrive à la prochaine mise à jour du matin.</div>';
+    menu.forEach(function(mm){
+      var d = new Date(mm.date + 'T12:00:00');
+      h += '<div class="mrow"><div class="md">' + (mm.date === todayKey(new Date()) ? "Ce soir" : JOURS[d.getDay()] + ' ' + d.getDate()) + '</div><div style="flex:1;min-width:0"><div class="mn">' + esc(mm.nom) + '</div><div class="sub">' + esc([mm.temps, mm.source].filter(Boolean).join(' · ')) + '</div></div>' +
+        (mm.url ? '<a class="mlink" href="' + esc(mm.url) + '" target="_blank" rel="noopener">Recette</a>' : '') + '</div>';
+      (mm.ingredients || []).forEach(function(x){ var k = x.toLowerCase(); if(!seen[k]){ seen[k] = 1; all.push(x); } });
+    });
+    if(all.length) h += ingHtml(all).replace('<div class="shead">Ingrédients</div>', '<div class="shead">Tous les ingrédients de la semaine</div>');
+  } else if(kind === 'carbu'){
+    t = 'Carburant'; h = carbuSheet();
   } else if(kind === 'mot'){
     t = 'Petit mot'; cls = 'note';
     h = '<textarea id="mot2" class="smot" placeholder="Laisse un mot à l\'autre…">' + esc($('mot').value) + '</textarea><div style="text-align:right;margin-top:12px"><button class="main" type="button" id="mot2ok">Enregistrer</button></div>';
@@ -362,7 +436,7 @@ function openSheet(kind){
   if(c2) c2.addEventListener('click', function(){
     var up = {}; lists[kind].forEach(function(x){ if(x.done && x.rep == null) up[x.id] = null; }); root.child(kind).update(up);
   });
-  if(kind === 'plat' && $('ingadd')){
+  if((kind === 'plat' || kind === 'menu') && $('ingadd')){
     var ingl = $('ingl'), ingRefresh = function(){
       var n = ingl.querySelectorAll('.row.sel').length;
       $('ingadd').textContent = n ? 'Ajouter ' + n + ' ingrédient' + (n > 1 ? 's' : '') + ' aux courses' : 'Rien à ajouter';
@@ -377,7 +451,7 @@ function openSheet(kind){
       ingRefresh();
     });
     $('ingadd').addEventListener('click', function(){
-      var ing = ((jour && jour.plat) || {}).ingredients || [], rows = ingl.querySelectorAll('.row.sel'), up = {}, n = 0, now = Date.now();
+      var ing = curIng, rows = ingl.querySelectorAll('.row.sel'), up = {}, n = 0, now = Date.now();
       for(var i = 0; i < rows.length; i++){
         var name = ing[parseInt(rows[i].getAttribute('data-ing'), 10)];
         if(name){ up[root.child('courses').push().key] = {name: String(name).slice(0, 80), done: false, at: now + i}; n++; }
@@ -393,7 +467,7 @@ function openSheet(kind){
   if(kind === 'mot') $('mot2ok').addEventListener('click', function(){ $('mot').value = $('mot2').value; saveMot(); closeSheet(); });
 }
 function bindSheets(){
-  var map = [['.w.wx', 'meteo'], ['.w.wx2', 'meteo'], ['.w.cal', 'agenda'], ['.rem.or', 'courses'], ['.rem.bl', 'taches'], ['.w.plat', 'plat'], ['.w.note', 'mot']];
+  var map = [['.w.menu', 'menu'], ['.w.carbu', 'carbu'], ['.w.wx', 'meteo'], ['.w.wx2', 'meteo'], ['.w.cal', 'agenda'], ['.rem.or', 'courses'], ['.rem.bl', 'taches'], ['.w.plat', 'plat'], ['.w.note', 'mot']];
   map.forEach(function(x){
     var el = document.querySelector(x[0]); if(!el) return;
     el.className += ' tap';

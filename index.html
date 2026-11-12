@@ -138,6 +138,28 @@ body.night .vinfo span{font-size:20px;opacity:.85}
 .row.ing.sel .box{background:#ff9500;border-color:#ff9500}
 .row.ing:not(.sel){color:#8e8e93}
 .ingb{display:inline-block;margin-top:8px;margin-left:6px;font-size:14px;font-weight:600;color:#ff9500;background:rgba(255,149,0,.12);padding:8px 12px;border-radius:20px;border:0}
+.vigi{display:block;margin:0 0 6px;padding:14px 18px;border-radius:20px;color:#fff;text-decoration:none;font-size:17px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.vigi.orange{background:#ff8a00}.vigi.rouge{background:#e0242b}
+.vigi b{font-weight:700;margin-right:6px}.vigi span{opacity:.9}
+.vigij{font-size:12px;font-weight:700;color:#3a2a00;background:#ffd60a;border-radius:8px;padding:4px 8px;margin-top:6px;display:inline-block}
+.w.menu{display:flex;flex-direction:column}
+.menul{display:flex;margin:6px -4px 0;flex:1}
+.mt{flex:1;min-width:0;margin:0 4px;padding:10px;border-radius:14px;background:rgba(118,118,128,.1)}
+.mt.on{background:#ff9500;color:#fff}
+.mt .md{font-size:12px;font-weight:700;text-transform:uppercase;opacity:.75}
+.mt .mn{font-size:15px;font-weight:600;line-height:1.3;margin-top:6px;word-wrap:break-word;overflow-wrap:break-word;-webkit-hyphens:auto;hyphens:auto}
+.mrow{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid rgba(60,60,67,.12)}
+.mrow .md{width:92px;font-size:14px;font-weight:700;color:#ff9500}
+.mrow .mn{font-size:17px;font-weight:600}
+.mlink{font-size:14px;font-weight:600;color:#007aff;text-decoration:none;margin-left:8px;white-space:nowrap}
+.cr{padding:7px 0;border-bottom:1px solid rgba(60,60,67,.12)}
+.cr:last-child{border-bottom:0}
+.cr .cn{font-size:12px;font-weight:700;color:#8e8e93;display:block}
+.cr .cp{font-size:20px;font-weight:700;color:#34c759;margin-right:6px}
+.cr .cw{font-size:12px;color:#8e8e93}
+.crow{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid rgba(60,60,67,.12);color:#1c1c1e;text-decoration:none;font-size:15px}
+.crow .cp{font-size:20px;font-weight:700;color:#34c759;width:100px;flex-shrink:0}
+body.night .vigi{display:none}
 .tap{cursor:pointer;-webkit-transition:-webkit-transform .15s;transition:transform .15s}
 .tap:active{-webkit-transform:scale(.98);transform:scale(.98)}
 #sheet{position:fixed;left:0;top:0;right:0;bottom:0;z-index:50;background:rgba(10,12,30,.45);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:40px 16px}
@@ -168,7 +190,7 @@ body.night .vinfo span{font-size:20px;opacity:.85}
 .hide{display:none !important}
 #login{max-width:400px;margin:120px auto;text-align:center}
 #login input{width:100%;margin:14px 0;text-align:center}
-@media (max-width:820px){.w.wx{display:block}.wxl{width:auto;border-right:0}.c1{width:50%}.c2,.c3{width:100%!important}.grid>.c1:nth-child(4){-webkit-box-ordinal-group:0;order:-2;width:100%}.grid>.c1:nth-child(5){order:-1;width:100%}.lock{margin-bottom:12px}.clk{font-size:72px}}
+@media (max-width:820px){.menul{flex-wrap:wrap}.mt{min-width:40%;margin-bottom:8px}.w.wx{display:block}.wxl{width:auto;border-right:0}.c1{width:50%}.c2,.c3{width:100%!important}.grid>.c1:nth-child(4){-webkit-box-ordinal-group:0;order:-2;width:100%}.grid>.c1:nth-child(5){order:-1;width:100%}.lock{margin-bottom:12px}.clk{font-size:72px}}
 </style>
 </head>
 <body>
@@ -183,6 +205,7 @@ body.night .vinfo span{font-size:20px;opacity:.85}
   <button type="button" id="vopen" class="vbtn" aria-label="Mettre en veille"><span class="vm">☾</span>Veille</button>
   <div class="lock"><div id="lockbox"><div class="date" id="date"></div><div class="clk" id="clk">--:--</div><div class="vinfo" id="vinfo"></div></div></div>
 
+  <a id="vigi" class="vigi hide" href="https://vigilance.meteofrance.fr/" target="_blank" rel="noopener"></a>
   <div class="grid">
     <div class="c2"><div class="w wx">
       <div class="wxl">
@@ -190,6 +213,7 @@ body.night .vinfo span{font-size:20px;opacity:.85}
         <div class="tr"><div class="t" id="mt">–</div><div class="wxi" id="mi">⛅</div></div>
         <div class="s" id="ms"></div>
         <div class="cs" id="mc"></div>
+        <div class="vigij hide" id="vigij"></div>
         <div class="stats" id="wst"></div>
         <div class="hrs" id="whr"></div>
       </div>
@@ -239,6 +263,16 @@ body.night .vinfo span{font-size:20px;opacity:.85}
 
     <div style="width:100%"><div class="sect">Plus</div></div>
 
+    <div class="c3" style="width:75%;padding:9px"><div class="w menu">
+      <div class="wt"><span>Menu de la semaine</span><span class="sub" style="text-transform:none">Toucher pour les ingrédients</span></div>
+      <div class="menul" id="menul"><div class="empty">Chargement…</div></div>
+    </div></div>
+
+    <div class="c1"><div class="w carbu">
+      <div class="wt"><span>⛽ Carburant</span></div>
+      <div id="carbul"><div class="empty">Chargement…</div></div>
+    </div></div>
+
     <div class="c1"><div class="w tm" id="tmw">
       <div class="wt"><span>Minuteur</span></div>
       <div class="big" id="tmv">00:00</div>
@@ -274,6 +308,6 @@ body.night .vinfo span{font-size:20px;opacity:.85}
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="app.js?v=1794489080"></script>
+<script src="app.js?v=1794489642"></script>
 </body>
 </html>
