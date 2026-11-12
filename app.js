@@ -231,10 +231,24 @@ var carbu = null, CARBUS = [['gazole_prix', 'Gazole'], ['e10_prix', 'SP95-E10'],
 function distKm(a, b, c, d){ var R = 6371, x = (c - a) * Math.PI / 180, y = (d - b) * Math.PI / 180, q = Math.sin(x / 2) * Math.sin(x / 2) + Math.cos(a * Math.PI / 180) * Math.cos(c * Math.PI / 180) * Math.sin(y / 2) * Math.sin(y / 2); return R * 2 * Math.atan2(Math.sqrt(q), Math.sqrt(1 - q)); }
 function prix(n){ return n.toFixed(3).replace('.', ',') + ' €'; }
 function cap(s){ s = String(s || '').toLowerCase(); return s.replace(/(^|[\s-])\S/g, function(m){ return m.toUpperCase(); }); }
-function carbuQuery(where){
-  return fetch('https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/records?limit=100&where=' + encodeURIComponent(where))
+function carbuQuery(where, ds){
+  ds = ds || 'prix-des-carburants-en-france-flux-instantane-v2';
+  return fetch('https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/' + ds + '/records?limit=100' + (where ? '&where=' + encodeURIComponent(where) : ''))
     .then(function(r){ return r.json(); })
-    .then(function(d){ if(!d || !d.results) throw new Error((d && (d.message || d.error_code)) || 'réponse vide'); return d.results; });
+    .then(function(d){ if(!d || !d.results) throw new Error((d && (d.message || d.error_code)) || 'réponse vide'); d.results.total = d.total_count; return d.results; });
+}
+/* le flux quotidien a une ligne par carburant : on regroupe par station */
+var FUELMAP = {'gazole': 'gazole_prix', 'e10': 'e10_prix', 'sp95': 'sp95_prix', 'sp98': 'sp98_prix'};
+function groupLong(r){
+  if(!r.length || r[0].prix_nom == null) return r;
+  var by = {}, out = [];
+  r.forEach(function(x){
+    var k = x.id || (x.adresse + x.ville);
+    if(!by[k]){ by[k] = {id: x.id, adresse: x.adresse, ville: x.ville, geom: x.geom, latitude: x.latitude, longitude: x.longitude}; out.push(by[k]); }
+    var f = FUELMAP[String(x.prix_nom).toLowerCase()];
+    if(f) by[k][f] = x.prix_valeur;
+  });
+  return out;
 }
 var carbuDiag = '';
 function numv(v){ if(v == null || v === '') return null; var n = parseFloat(String(v).replace(',', '.')); if(isNaN(n)) return null; if(n > 100) n = n / 1000; return n; }
@@ -251,12 +265,14 @@ function loadCarbu(){
   try { $('carbul').innerHTML = '<div class="empty">Recherche des stations…</div>'; } catch(e){}
   if(!geo){ $('carbul').innerHTML = '<div class="empty">Règle ta ville dans Réglages</div>'; return; }
   var pt = "geom'POINT(" + geo.lon + ' ' + geo.lat + ")'", diag = [];
-  var tries = ['within_distance(geom, ' + pt + ', 10km)', 'search(ville, "' + geo.ville + '")', '"' + geo.ville + '"'];
+  var tries = [['within_distance(geom, ' + pt + ', 10km)'], ['search(ville, "' + geo.ville + '")'], ['within_distance(geom, ' + pt + ', 10km)', 'prix-carburants-quotidien'], ['', null]];
   var attempt = function(i){
     if(i >= tries.length) return Promise.resolve([]);
-    return carbuQuery(tries[i]).then(function(r){
-      r = r.map(normStation).filter(function(x){ return x.km == null || x.km <= 15; });
-      diag.push('essai ' + (i + 1) + ' : ' + r.length);
+    return carbuQuery(tries[i][0], tries[i][1]).then(function(r){
+      var total = r.total, raw = r.length;
+      r = groupLong(r).map(normStation).filter(function(x){ return x.km == null || x.km <= 15; });
+      diag.push('essai ' + (i + 1) + ' : ' + raw + '/' + total + ' → ' + r.length);
+      if(i === tries.length - 1 && raw) diag.push('ex. : ' + JSON.stringify(r[0] || {}).slice(0, 200));
       return r.length ? r : attempt(i + 1);
     }, function(e){ diag.push('essai ' + (i + 1) + ' : erreur ' + e.message); return attempt(i + 1); });
   };
