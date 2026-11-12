@@ -29,7 +29,7 @@ function load(k){ try { return localStorage.getItem(k); } catch(e){ return null;
 function tick(){
   var d = new Date();
   $('clk').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
-  $('date').textContent = JOURS[d.getDay()] + ' ' + d.getDate() + ' ' + MOIS[d.getMonth()];
+  $('date').innerHTML = '<b>' + JOURS[d.getDay()] + '</b> ' + d.getDate() + ' ' + MOIS[d.getMonth()];
 }
 
 /* ---------- listes ---------- */
@@ -104,6 +104,11 @@ function loadJour(){
 /* ---------- météo (Open-Meteo, sans clé) ---------- */
 var WMO = {0:'Ciel dégagé',1:'Plutôt dégagé',2:'Quelques nuages',3:'Couvert',45:'Brouillard',48:'Brouillard',51:'Bruine',53:'Bruine',55:'Bruine',61:'Pluie faible',63:'Pluie',65:'Forte pluie',66:'Pluie verglaçante',67:'Pluie verglaçante',71:'Neige faible',73:'Neige',75:'Forte neige',80:'Averses',81:'Averses',82:'Fortes averses',95:'Orages',96:'Orages',99:'Orages'};
 var geo = null;
+function icon(c){
+  if(c === 0) return new Date().getHours() >= 19 || new Date().getHours() < 7 ? '🌙' : '☀️';
+  if(c <= 2) return '⛅'; if(c === 3) return '☁️'; if(c <= 48) return '🌫️';
+  if(c >= 71 && c <= 77) return '❄️'; if(c >= 95) return '⛈️'; return '🌧️';
+}
 function loadMeteo(){
   var ville = config && config.ville;
   if(!ville){ $('mt').textContent = '–'; $('ms').textContent = 'Ville à régler'; $('mc').textContent = ''; return; }
@@ -117,6 +122,7 @@ function loadMeteo(){
   }).then(function(r){ return r.json(); }).then(function(m){
     var t = Math.round(m.current.temperature_2m), code = m.current.weather_code;
     $('mt').textContent = t + '°';
+    $('mi').textContent = icon(code);
     var resume = (WMO[code] || '') + ' · max ' + Math.round(m.daily.temperature_2m_max[0]) + '°';
     var h = new Date().getHours(), pluie = null, hp = m.hourly.precipitation_probability;
     for(var i = h; i < hp.length; i++){ if(hp[i] >= 50){ pluie = i; break; } }
