@@ -181,7 +181,7 @@ function loadMeteo(){
   var p = (geo && geo.ville === ville) ? Promise.resolve(geo) :
     fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&language=fr&name=' + encodeURIComponent(ville))
       .then(function(r){ return r.json(); })
-      .then(function(d){ if(!d.results || !d.results.length) throw new Error('ville'); geo = {ville: ville, lat: d.results[0].latitude, lon: d.results[0].longitude}; return geo; });
+      .then(function(d){ if(!d.results || !d.results.length) throw new Error('ville'); geo = {ville: ville, lat: d.results[0].latitude, lon: d.results[0].longitude, cp: (d.results[0].postcodes || [])[0] || ''}; return geo; });
   p.then(function(g){
     if(!carbu || Date.now() - carbu.at.getTime() > 1800000) setTimeout(function(){ try { loadCarbu(); } catch(e){ $('carbul').innerHTML = '<div class="empty">Erreur : ' + esc(e.message) + '</div>'; } }, 10);
     return fetch('https://api.open-meteo.com/v1/forecast?timezone=Europe%2FParis&forecast_days=7&latitude=' + g.lat + '&longitude=' + g.lon +
@@ -231,9 +231,9 @@ var carbu = null, CARBUS = [['gazole_prix', 'Gazole'], ['e10_prix', 'SP95-E10'],
 function distKm(a, b, c, d){ var R = 6371, x = (c - a) * Math.PI / 180, y = (d - b) * Math.PI / 180, q = Math.sin(x / 2) * Math.sin(x / 2) + Math.cos(a * Math.PI / 180) * Math.cos(c * Math.PI / 180) * Math.sin(y / 2) * Math.sin(y / 2); return R * 2 * Math.atan2(Math.sqrt(q), Math.sqrt(1 - q)); }
 function prix(n){ return n.toFixed(3).replace('.', ',') + ' €'; }
 function cap(s){ s = String(s || '').toLowerCase(); return s.replace(/(^|[\s-])\S/g, function(m){ return m.toUpperCase(); }); }
-function carbuQuery(where, ds){
+function carbuQuery(where, ds, offset){
   ds = ds || 'prix-des-carburants-en-france-flux-instantane-v2';
-  return fetch('https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/' + ds + '/records?limit=100' + (where ? '&where=' + encodeURIComponent(where) : ''))
+  return fetch('https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/' + ds + '/records?limit=100' + (offset ? '&offset=' + offset : '') + (where ? '&where=' + encodeURIComponent(where) : ''))
     .then(function(r){ return r.json(); })
     .then(function(d){ if(!d || !d.results) throw new Error((d && (d.message || d.error_code)) || 'réponse vide'); d.results.total = d.total_count; return d.results; });
 }
@@ -270,13 +270,27 @@ function loadCarbu(){
   try { $('carbul').innerHTML = '<div class="empty">Recherche des stations…</div>'; } catch(e){}
   if(!geo){ $('carbul').innerHTML = '<div class="empty">Règle ta ville dans Réglages</div>'; return; }
   var pt = "geom'POINT(" + geo.lon + ' ' + geo.lat + ")'", diag = [];
-  var ptr = "geom'POINT(" + geo.lat + ' ' + geo.lon + ")'";
-  var tries = [['within_distance(geom, ' + pt + ', 10km)'], ['within_distance(geom, ' + ptr + ', 10km)'], ['search(ville, "' + geo.ville + '")'], ['within_distance(geom, ' + pt + ', 10km)', 'prix-carburants-quotidien'], ['', null]];
+  var norm = function(t){ return String(t || '').toLowerCase().normalize ? String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z]/g, '') : String(t || '').toLowerCase().replace(/[^a-z]/g, ''); };
+  var keep = function(r){ return r.filter(function(x){ return x.km != null ? x.km <= 15 : norm(x.ville) === norm(geo.ville); }); };
+  var dep = geo.cp ? geo.cp.slice(0, geo.cp.indexOf('97') === 0 ? 3 : 2) : '';
+  var steps = [
+    function(){ return carbuQuery('within_distance(geom, ' + pt + ', 10km)'); },
+    function(){
+      if(!dep) return Promise.resolve([]);
+      var w = 'startswith(cp, "' + dep + '")';
+      return carbuQuery(w).then(function(r1){
+        var n = r1.total || 0, more = [];
+        for(var off = 100; off < Math.min(n, 600); off += 100) more.push(carbuQuery(w, null, off));
+        return Promise.all(more).then(function(rs){ var all = r1.slice(); rs.forEach(function(r){ all = all.concat(r); }); all.total = n; return all; });
+      });
+    },
+    function(){ return carbuQuery('search(ville, "' + geo.ville + '")'); }
+  ];
   var attempt = function(i){
-    if(i >= tries.length) return Promise.resolve([]);
-    return carbuQuery(tries[i][0], tries[i][1]).then(function(r){
-      var total = r.total, raw = r.length, rawFirst = r[0] ? {geom: r[0].geom, latitude: r[0].latitude, longitude: r[0].longitude, ville: r[0].ville, gazole_prix: r[0].gazole_prix} : {};
-      r = groupLong(r).map(normStation).filter(function(x){ return x.km == null || x.km <= 15; });
+    if(i >= steps.length) return Promise.resolve([]);
+    return steps[i]().then(function(r){
+      var total = r.total, raw = r.length, rawFirst = r[0] ? {geom: r[0].geom, latitude: r[0].latitude, longitude: r[0].longitude, ville: r[0].ville} : {};
+      r = keep(groupLong(r).map(normStation));
       diag.push('essai ' + (i + 1) + ' : ' + raw + '/' + total + ' → ' + r.length);
       if(raw && !r.length) diag.push('ex. : ' + JSON.stringify(rawFirst).slice(0, 220));
       return r.length ? r : attempt(i + 1);
