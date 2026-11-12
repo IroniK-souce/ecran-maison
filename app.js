@@ -231,22 +231,36 @@ var carbu = null, CARBUS = [['gazole_prix', 'Gazole'], ['e10_prix', 'SP95-E10'],
 function distKm(a, b, c, d){ var R = 6371, x = (c - a) * Math.PI / 180, y = (d - b) * Math.PI / 180, q = Math.sin(x / 2) * Math.sin(x / 2) + Math.cos(a * Math.PI / 180) * Math.cos(c * Math.PI / 180) * Math.sin(y / 2) * Math.sin(y / 2); return R * 2 * Math.atan2(Math.sqrt(q), Math.sqrt(1 - q)); }
 function prix(n){ return n.toFixed(3).replace('.', ',') + ' €'; }
 function cap(s){ s = String(s || '').toLowerCase(); return s.replace(/(^|[\s-])\S/g, function(m){ return m.toUpperCase(); }); }
+function carbuQuery(where){
+  return fetch('https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/records?limit=100&where=' + encodeURIComponent(where))
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if(!d || !d.results) throw new Error((d && (d.message || d.error_code)) || 'réponse vide'); return d.results; });
+}
 function loadCarbu(){
   if(!geo){ $('carbul').innerHTML = '<div class="empty">Règle ta ville dans Réglages</div>'; return; }
-  var url = 'https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/records?limit=100' +
-    '&select=id,adresse,ville,geom,gazole_prix,e10_prix,sp95_prix,sp98_prix' +
-    '&where=' + encodeURIComponent("within_distance(geom, geom'POINT(" + geo.lon + ' ' + geo.lat + ")', 10km)");
-  fetch(url).then(function(r){ return r.json(); }).then(function(d){
-    var st = (d.results || []).map(function(x){ var g = x.geom || {}; x.km = (g.lat != null) ? distKm(geo.lat, geo.lon, g.lat, g.lon) : 99; return x; });
-    carbu = {stations: st, at: new Date()};
-    var h = '';
-    CARBUS.forEach(function(c){
-      var best = st.filter(function(x){ return x[c[0]]; }).sort(function(a, b){ return a[c[0]] - b[c[0]]; })[0];
-      if(best) h += '<div class="cr"><span class="cn">' + c[1] + '</span><span class="cp">' + prix(best[c[0]]) + '</span><span class="cw">' + esc(cap(best.ville)) + ' · ' + best.km.toFixed(1).replace('.', ',') + ' km</span></div>';
-    });
-    $('carbul').innerHTML = h || '<div class="empty">Aucune station trouvée à moins de 10 km</div>';
-    if(sheetKind === 'carbu') $('sheetbody').innerHTML = carbuSheet();
-  }).catch(function(){ $('carbul').innerHTML = '<div class="empty">Prix indisponibles pour le moment</div>'; });
+  var pt = "geom'POINT(" + geo.lon + ' ' + geo.lat + ")'", lastErr = '';
+  carbuQuery('within_distance(geom, ' + pt + ', 10km)')
+    .catch(function(e){ lastErr = e.message; return []; })
+    .then(function(r){ return r.length ? r : carbuQuery('"' + geo.ville + '"').catch(function(e){ lastErr += ' / ' + e.message; return []; }); })
+    .then(function(res){
+      var st = res.map(function(x){
+        var g = x.geom || {};
+        if(g.coordinates){ g = {lon: g.coordinates[0], lat: g.coordinates[1]}; x.geom = g; }
+        if(g.lat == null && x.latitude) { g = {lat: x.latitude / 100000, lon: x.longitude / 100000}; x.geom = g; }
+        x.km = (g.lat != null) ? distKm(geo.lat, geo.lon, g.lat, g.lon) : 99;
+        CARBUS.forEach(function(c){ if(typeof x[c[0]] === 'string') x[c[0]] = parseFloat(x[c[0]]); });
+        return x;
+      }).filter(function(x){ return x.km <= 15; });
+      carbu = {stations: st, at: new Date()};
+      var h = '';
+      CARBUS.forEach(function(c){
+        var best = st.filter(function(x){ return x[c[0]]; }).sort(function(a, b){ return a[c[0]] - b[c[0]]; })[0];
+        if(best) h += '<div class="cr"><span class="cn">' + c[1] + '</span><span class="cp">' + prix(best[c[0]]) + '</span><span class="cw">' + esc(cap(best.ville)) + ' · ' + best.km.toFixed(1).replace('.', ',') + ' km</span></div>';
+      });
+      $('carbul').innerHTML = h || '<div class="empty">Aucune station trouvée autour de ' + esc(geo.ville) + '</div>' + (lastErr ? '<div class="sub" style="font-size:11px;margin-top:6px">Détail : ' + esc(lastErr.slice(0, 160)) + '</div>' : '');
+      if(sheetKind === 'carbu') $('sheetbody').innerHTML = carbuSheet();
+    })
+    .catch(function(e){ $('carbul').innerHTML = '<div class="empty">Prix indisponibles pour le moment</div><div class="sub" style="font-size:11px;margin-top:6px">Détail : ' + esc(String(e && e.message || e).slice(0, 160)) + '</div>'; });
 }
 function carbuSheet(){
   if(!carbu) return '<div class="empty">Chargement des prix…</div>';
