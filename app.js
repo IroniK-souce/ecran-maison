@@ -80,7 +80,7 @@ function renderJour(){
   for(var i = 0; i < ag.length && shown < 6; i++){
     var a = ag[i], lab;
     if(a.date === tk) lab = a.heure || 'Journée';
-    else if(a.date === tmk) lab = 'Dem. ' + (a.heure || '');
+    else if(a.date === tmk) lab = 'Demain ' + (a.heure || '');
     else continue;
     h += '<div class="row" style="cursor:default"><span class="when' + (a.date === tmk ? ' dem' : '') + '">' + esc(lab) + '</span>' + esc(a.titre) + '</div>';
     shown++;
@@ -94,7 +94,7 @@ function renderJour(){
     var bits = []; if(p.temps) bits.push(p.temps); if(p.difficulte) bits.push(p.difficulte); if(p.source) bits.push('Trouvée sur ' + p.source);
     $('pd').textContent = bits.join(' · ');
     if(p.url && /^https:\/\//.test(p.url)){ $('purl').href = p.url; $('purl').style.display = ''; } else { $('purl').style.display = 'none'; }
-    if(p.image){ $('pimg').innerHTML = '<img alt="" src="' + esc(p.image) + '">'; } else { $('pimg').innerHTML = '🍽'; }
+    if(p.image){ $('pimg').innerHTML = '<img alt="" src="' + esc(p.image) + '">'; } else { $('pimg').innerHTML = '🍲'; }
   }
 }
 function loadJour(){

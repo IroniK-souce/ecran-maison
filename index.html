@@ -6,75 +6,80 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Maison">
-<meta name="theme-color" content="#0e1014">
+<meta name="theme-color" content="#0b0d10">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="icon" href="icon.png">
 <title>Maison</title>
 <style>
-:root{--bg:#0e1014;--card:#171a21;--card2:#1d212a;--line:#262b36;--tx:#f2f3f5;--mu:#8d94a1;--blue:#6ea8ff;--green:#4ade80;--amber:#fbbf24;--rose:#fb7185;--violet:#a78bfa}
+:root{--bg:#0b0d10;--tile:#1a1d23;--tile2:#23272f;--line:#2a2f38;--tx:#f1f3f4;--mu:#9aa0a6;--acc:#8ab4f8;--green:#81c995;--amber:#fdd663;--rose:#f28b82}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:var(--bg)}
-body{font-family:-apple-system,"SF Pro Display",Helvetica,Arial,sans-serif;color:var(--tx);-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1180px;margin:0 auto;padding:22px 22px 14px;padding-top:max(22px,env(safe-area-inset-top))}
-.hero{display:flex;align-items:stretch;margin:0 -7px 0}
-.hero>div{padding:0 7px}
-.clockbox{flex:1.4;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:6px !important}
-.clk{font-size:96px;font-weight:200;line-height:.95;letter-spacing:-3px}
-.date{font-size:21px;color:var(--mu);margin-top:8px;font-weight:400}
-.date b{color:var(--tx);font-weight:600}
-.wx{flex:1}
-.wxc{background:linear-gradient(135deg,#1f3a5f 0%,#22324a 55%,#1d212a 100%);border-radius:24px;padding:18px 20px;height:100%;display:flex;align-items:center}
-.wxi{font-size:56px;line-height:1;margin-right:16px}
-.met .t{font-size:44px;font-weight:300;line-height:1}
-.met .s{font-size:15px;color:#c6d3e6;margin-top:6px}
-.met .cs{display:inline-block;margin-top:8px;font-size:13px;font-weight:600;color:#1b1300;background:var(--amber);padding:4px 10px;border-radius:20px}
-.met .cs:empty{display:none}
-.grid{display:flex;flex-wrap:wrap;margin:14px -7px 0}
-.cell{width:50%;padding:7px}
-.full{width:100%;padding:7px}
-.card{background:var(--card);border-radius:24px;padding:18px 20px;height:100%;border:1px solid var(--line)}
-.h{margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
-.tag{display:flex;align-items:center;font-size:15px;font-weight:600;letter-spacing:.2px}
-.ic{width:30px;height:30px;border-radius:10px;display:inline-block;text-align:center;line-height:30px;font-size:16px;margin-right:10px}
-.ic.b{background:rgba(110,168,255,.16)}.ic.g{background:rgba(74,222,128,.16)}.ic.v{background:rgba(167,139,250,.16)}.ic.a{background:rgba(251,191,36,.16)}
-.row{display:flex;align-items:center;padding:9px 0;font-size:18px;cursor:pointer;border-top:1px solid var(--line)}
-.row:first-child{border-top:0}
-.box{width:24px;height:24px;border:2px solid #4a5160;border-radius:50%;margin-right:14px;flex-shrink:0;text-align:center;line-height:20px;font-size:13px;color:#0e1014;font-weight:700}
-.row.done{color:#5b6270;text-decoration:line-through}
+body{font-family:"Google Sans",-apple-system,Roboto,Helvetica,Arial,sans-serif;color:var(--tx);-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:20px 36px 0}
+.brand{display:flex;align-items:center}
+.logo{width:34px;height:34px;border-radius:50%;background:var(--tx);color:var(--bg);text-align:center;line-height:34px;font-size:18px;margin-right:14px}
+.chip{font-size:15px;font-weight:500;padding:8px 18px;border-radius:20px;color:var(--mu);margin-right:6px}
+.chip.on{background:var(--tx);color:var(--bg)}
+.right{display:flex;align-items:center;font-size:17px;color:var(--mu)}
+.right .wxi{font-size:22px;margin-right:6px}
+.right #mt{color:var(--tx);font-weight:500;margin-right:22px}
+.clk{font-size:30px;font-weight:400;color:var(--tx);letter-spacing:.5px}
+.hero{position:relative;margin:18px 0 0;height:296px;overflow:hidden;background:radial-gradient(ellipse at 78% 40%,#7a4a14 0%,#3d2611 38%,#14100c 70%,var(--bg) 100%)}
+.hero .art{position:absolute;right:7%;top:50%;margin-top:-110px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#5a3a18,#2a1b0c);text-align:center;line-height:220px;font-size:110px}
+.hero .art img{width:220px;height:220px;border-radius:50%;object-fit:cover;display:block}
+.hero .fade{position:absolute;left:0;right:0;bottom:0;height:90px;background:linear-gradient(to bottom,rgba(11,13,16,0),var(--bg))}
+.hero .fadel{position:absolute;left:0;top:0;bottom:0;width:60%;background:linear-gradient(to right,rgba(11,13,16,.85),rgba(11,13,16,0))}
+.hero .txt{position:absolute;left:36px;top:34px;right:42%;z-index:2}
+.kick{font-size:14px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--amber)}
+.pn{font-size:42px;font-weight:500;line-height:1.12;margin-top:10px;letter-spacing:-.5px}
+.meta{font-size:16px;color:#c9c3b8;margin-top:12px}
+.meta .when-t{margin-right:4px}
+.cta{margin-top:22px}
+.btn{display:inline-block;font-size:17px;font-weight:500;padding:12px 26px;border-radius:26px;text-decoration:none;cursor:pointer;border:0;-webkit-appearance:none}
+.btn.play{background:var(--tx);color:var(--bg)}
+.wxadv{display:inline-block;margin-left:12px;font-size:15px;color:var(--amber);vertical-align:middle}
+.wxadv:empty{display:none}
+.sect{padding:0 36px}
+.rowt{font-size:20px;font-weight:500;margin:6px 0 14px;display:flex;justify-content:space-between;align-items:baseline}
+.rowt small{font-size:13px;color:var(--mu);font-weight:400}
+#agenda{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px 0 6px;margin:0 -36px;padding-left:36px;padding-right:36px}
+#agenda .row{flex-shrink:0;width:210px;min-height:104px;margin-right:14px;background:var(--tile);border-radius:16px;padding:16px 18px;font-size:19px;font-weight:500;line-height:1.25}
+#agenda .row:first-child{background:#1e2a3d;box-shadow:0 0 0 3px var(--tx)}
+#agenda .when{display:block;font-size:14px;font-weight:500;color:var(--acc);margin-bottom:8px}
+#agenda .when.dem{color:var(--mu)}
+#agenda .empty{background:var(--tile);border-radius:16px;padding:18px 22px;color:var(--mu);font-size:16px}
+.panels{display:flex;margin:20px -8px 0}
+.panel{flex:1;padding:0 8px;min-width:0}
+.tile{background:var(--tile);border-radius:20px;padding:18px 20px;height:100%}
+.th{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.tt{font-size:18px;font-weight:500}
+.tt .e{margin-right:8px}
+.link{background:none;border:0;color:var(--mu);font-size:13px;padding:0;-webkit-appearance:none;cursor:pointer}
+.list .row{display:flex;align-items:center;padding:9px 0;font-size:17px;cursor:pointer}
+.box{width:22px;height:22px;border:2px solid #5f6368;border-radius:50%;margin-right:12px;flex-shrink:0;text-align:center;line-height:18px;font-size:12px;color:var(--bg);font-weight:700}
+.row.done{color:#5f6368;text-decoration:line-through}
 .row.done .box{background:var(--green);border-color:var(--green)}
-.when{min-width:64px;margin-right:10px;font-size:14px;font-weight:600;color:var(--blue);background:rgba(110,168,255,.12);padding:4px 8px;border-radius:8px;text-align:center}
-.when.dem{color:var(--mu);background:rgba(141,148,161,.12)}
-.empty{color:var(--mu);font-size:15px;padding:6px 0}
-form.add{display:flex;margin-top:12px}
-input{font-size:16px;padding:11px 14px;border:1px solid var(--line);border-radius:14px;background:var(--card2);color:var(--tx);-webkit-appearance:none;min-width:0;outline:none}
-input::placeholder{color:#5b6270}
-form.add input{flex:1;margin-right:8px}
-button,.btn{font-size:15px;font-weight:600;padding:11px 16px;border:0;border-radius:14px;background:var(--card2);color:var(--tx);-webkit-appearance:none;text-decoration:none;display:inline-block;cursor:pointer}
-form.add button{background:var(--tx);color:var(--bg);width:46px;padding:11px 0;font-size:20px;line-height:1}
+.empty{color:var(--mu);font-size:15px;padding:8px 0}
+form.add,.inl{display:flex;margin-top:10px}
+input{font-size:16px;padding:10px 14px;border:0;border-radius:22px;background:var(--tile2);color:var(--tx);-webkit-appearance:none;min-width:0;outline:none}
+input::placeholder{color:#6b7078}
+form.add input,.inl input{flex:1;margin-right:8px}
+button{font-size:15px;font-weight:500;padding:10px 16px;border:0;border-radius:22px;background:var(--tile2);color:var(--tx);-webkit-appearance:none;cursor:pointer}
+form.add button{width:42px;padding:10px 0;font-size:20px;line-height:1;background:var(--tx);color:var(--bg)}
 button.main{background:var(--tx);color:var(--bg)}
-.link{background:none;border:0;color:var(--mu);font-size:13px;font-weight:500;padding:0}
-.big{font-size:44px;font-weight:300;letter-spacing:-1px;line-height:1.05}
+.big{font-size:42px;font-weight:400;letter-spacing:-1px;line-height:1.1;margin-top:4px}
 .sub{font-size:14px;color:var(--mu)}
-.bar{height:10px;background:var(--card2);border-radius:6px;margin-top:14px;overflow:hidden}
-.bar div{height:10px;background:linear-gradient(90deg,var(--violet),var(--blue));border-radius:6px}
-.bar div.over{background:var(--rose)}
-.inl{margin-top:14px;display:flex}
-.inl input{flex:1;margin-right:8px}
-.platc{background:linear-gradient(120deg,#3a2a12 0%,#2a2016 45%,var(--card) 100%);border-color:#3a2f1f}
-.plat{display:flex;align-items:center}
-.thumb{width:96px;height:96px;border-radius:20px;background:rgba(251,191,36,.14);flex-shrink:0;margin-right:18px;overflow:hidden;text-align:center;line-height:96px;font-size:44px}
-.thumb img{width:96px;height:96px;object-fit:cover;display:block}
-.kick{font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--amber)}
-.pn{font-size:24px;font-weight:600;line-height:1.25;margin-top:4px}
-.btn.rec{background:var(--amber);color:#1b1300;margin-left:12px;white-space:nowrap}
-.st{font-size:12px;color:#5b6270;text-align:center;margin-top:12px;padding-bottom:max(8px,env(safe-area-inset-bottom))}
-.set{background:var(--card);border-radius:24px;padding:18px 20px;border:1px solid var(--line);margin:7px}
+.pbar{height:8px;background:var(--tile2);border-radius:4px;margin-top:14px;overflow:hidden}
+.pbar div{height:8px;background:var(--acc);border-radius:4px}
+.pbar div.over{background:var(--rose)}
+.st{font-size:12px;color:#5f6368;text-align:center;margin:18px 0 0;padding-bottom:16px}
+.set{background:var(--tile);border-radius:20px;padding:18px 20px;margin:16px 36px 0}
 .set label{display:block;font-size:14px;color:var(--mu);margin:10px 0 6px}
 .set input{width:100%}
 .hide{display:none !important}
-#login{max-width:420px;margin:90px auto;background:var(--card);border-radius:24px;padding:28px;border:1px solid var(--line);text-align:center}
+#login{max-width:420px;margin:90px auto;background:var(--tile);border-radius:24px;padding:28px;text-align:center}
 #login input{width:100%;margin:16px 0;text-align:center}
-@media (max-width:760px){.hero{display:block}.clockbox{padding-bottom:14px !important}.clk{font-size:72px}.cell{width:100%}.wxi{font-size:44px}.met .t{font-size:36px}}
+@media (max-width:820px){.chips{display:none}.hero{height:300px}.hero .art{width:150px;height:150px;line-height:150px;font-size:70px;margin-top:-75px;right:5%}.hero .txt{right:30%;left:22px}.pn{font-size:30px}.bar,.sect{padding-left:22px;padding-right:22px}.panels{display:block;margin:12px 0 0}.panel{padding:0;margin-bottom:12px}}
 </style>
 </head>
 <body>
@@ -85,54 +90,51 @@ button.main{background:var(--tx);color:var(--bg)}
   <div class="sub" id="lmsg" style="margin-top:12px"></div>
 </div>
 
-<div class="wrap hide" id="app">
-  <div class="hero">
-    <div class="clockbox"><div class="clk" id="clk">--:--</div><div class="date" id="date"></div></div>
-    <div class="wx"><div class="wxc"><div class="wxi" id="mi">⛅</div><div class="met"><div class="t" id="mt">–</div><div class="s" id="ms"></div><div class="cs" id="mc"></div></div></div></div>
+<div class="hide" id="app">
+  <div class="bar">
+    <div class="brand"><div class="logo">⌂</div><div class="chips"><span class="chip on">Accueil</span><span class="chip" id="date"></span></div></div>
+    <div class="right"><span class="wxi" id="mi">⛅</span><span id="mt">–</span><span class="clk" id="clk">--:--</span></div>
   </div>
 
-  <div class="grid">
-    <div class="full"><div class="card platc">
-      <div class="plat">
-        <div class="thumb" id="pimg">🍽</div>
-        <div style="flex:1;min-width:0">
-          <div class="kick">Ce soir, on mange</div>
-          <div class="pn" id="pn">En attente de la suggestion du jour</div>
-          <div class="sub" id="pd" style="margin-top:6px"></div>
-        </div>
-        <a class="btn rec" id="purl" href="#" target="_blank" rel="noopener" style="display:none">Recette →</a>
-      </div>
-    </div></div>
+  <div class="hero">
+    <div class="art" id="pimg">🍲</div>
+    <div class="fadel"></div><div class="fade"></div>
+    <div class="txt">
+      <div class="kick">Ce soir, on mange</div>
+      <div class="pn" id="pn">En attente de la suggestion du jour</div>
+      <div class="meta" id="pd"></div>
+      <div class="cta"><a class="btn play" id="purl" href="#" target="_blank" rel="noopener" style="display:none">▶&nbsp; Voir la recette</a><span class="wxadv" id="mc"></span></div>
+    </div>
+  </div>
 
-    <div class="cell"><div class="card">
-      <p class="h"><span class="tag"><span class="ic b">📅</span>Agenda</span><span id="agup" class="sub" style="font-size:12px"></span></p>
-      <div id="agenda"><div class="empty">Chargement…</div></div>
-    </div></div>
+  <div class="sect">
+    <div class="rowt"><span>Aujourd'hui</span><small><span id="ms"></span> <span id="agup"></span></small></div>
+    <div id="agenda"><div class="empty">Chargement…</div></div>
 
-    <div class="cell"><div class="card">
-      <p class="h"><span class="tag"><span class="ic g">🛒</span>Courses</span><button class="link" type="button" data-clear="courses">Retirer les cochés</button></p>
-      <div id="l-courses"><div class="empty">Chargement…</div></div>
-      <form class="add" data-col="courses"><input placeholder="Ajouter un article" autocomplete="off"><button type="submit" aria-label="Ajouter">+</button></form>
-    </div></div>
-
-    <div class="cell"><div class="card">
-      <p class="h"><span class="tag"><span class="ic a">🏠</span>Maison</span><button class="link" type="button" data-clear="taches">Retirer les faites</button></p>
-      <div id="l-taches"><div class="empty">Chargement…</div></div>
-      <form class="add" data-col="taches"><input placeholder="Ajouter une tâche" autocomplete="off"><button type="submit" aria-label="Ajouter">+</button></form>
-    </div></div>
-
-    <div class="cell"><div class="card">
-      <p class="h"><span class="tag"><span class="ic v">💶</span><span id="bt">Budget du mois</span></span><button class="link" type="button" id="bset">Modifier</button></p>
-      <div class="big" id="brest">–</div>
-      <div class="sub" id="bsub" style="margin-top:4px"></div>
-      <div class="bar"><div id="bbar" style="width:0"></div></div>
-      <form id="bdep" class="inl"><input id="bdepv" inputmode="decimal" placeholder="Nouvelle dépense (€)"><button type="submit">Ajouter</button></form>
-      <form id="btot" class="inl hide"><input id="btotv" inputmode="decimal" placeholder="Budget du mois (€)"><button class="main" type="submit">OK</button></form>
-    </div></div>
+    <div class="panels">
+      <div class="panel"><div class="tile">
+        <div class="th"><span class="tt"><span class="e">🛒</span>Courses</span><button class="link" type="button" data-clear="courses">Retirer les cochés</button></div>
+        <div class="list" id="l-courses"><div class="empty">Chargement…</div></div>
+        <form class="add" data-col="courses"><input placeholder="Ajouter un article" autocomplete="off"><button type="submit" aria-label="Ajouter">+</button></form>
+      </div></div>
+      <div class="panel"><div class="tile">
+        <div class="th"><span class="tt"><span class="e">🏠</span>Maison</span><button class="link" type="button" data-clear="taches">Retirer les faites</button></div>
+        <div class="list" id="l-taches"><div class="empty">Chargement…</div></div>
+        <form class="add" data-col="taches"><input placeholder="Ajouter une tâche" autocomplete="off"><button type="submit" aria-label="Ajouter">+</button></form>
+      </div></div>
+      <div class="panel"><div class="tile">
+        <div class="th"><span class="tt"><span class="e">💶</span><span id="bt">Budget du mois</span></span><button class="link" type="button" id="bset">Modifier</button></div>
+        <div class="big" id="brest">–</div>
+        <div class="sub" id="bsub" style="margin-top:4px"></div>
+        <div class="pbar"><div id="bbar" style="width:0"></div></div>
+        <form id="bdep" class="inl"><input id="bdepv" inputmode="decimal" placeholder="Dépense (€)"><button type="submit">Ajouter</button></form>
+        <form id="btot" class="inl hide"><input id="btotv" inputmode="decimal" placeholder="Budget (€)"><button class="main" type="submit">OK</button></form>
+      </div></div>
+    </div>
   </div>
 
   <div id="settings" class="set hide">
-    <p class="h" style="margin:0"><span class="tag">Réglages</span></p>
+    <div class="tt">Réglages</div>
     <label for="cv">Ville pour la météo</label>
     <input id="cv" placeholder="Pau">
     <div style="margin-top:14px"><button class="main" id="csave" type="button">Enregistrer</button> <button id="cclose" type="button">Fermer</button> <span id="cmsg" class="sub"></span></div>
