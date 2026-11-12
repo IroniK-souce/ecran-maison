@@ -253,11 +253,16 @@ function groupLong(r){
 var carbuDiag = '';
 function numv(v){ if(v == null || v === '') return null; var n = parseFloat(String(v).replace(',', '.')); if(isNaN(n)) return null; if(n > 100) n = n / 1000; return n; }
 function normStation(x){
-  var g = x.geom || x.geo_point || x.geo_point_2d || {};
-  if(g.coordinates) g = {lon: g.coordinates[0], lat: g.coordinates[1]};
-  if(g.lat == null && x.latitude != null){ var la = parseFloat(x.latitude), lo = parseFloat(x.longitude); if(Math.abs(la) > 1000){ la /= 100000; lo /= 100000; } g = {lat: la, lon: lo}; }
-  x.geom = g;
-  x.km = (g.lat != null && !isNaN(g.lat)) ? distKm(geo.lat, geo.lon, g.lat, g.lon) : null;
+  var cands = [], g = x.geom || x.geo_point || x.geo_point_2d || null;
+  var add = function(la, lo){ la = parseFloat(la); lo = parseFloat(lo); if(isNaN(la) || isNaN(lo)) return; cands.push([la, lo]); cands.push([lo, la]); };
+  if(g){ if(g.coordinates) add(g.coordinates[1], g.coordinates[0]); else add(g.lat, g.lon); }
+  if(x.latitude != null){
+    var la = parseFloat(x.latitude), lo = parseFloat(x.longitude);
+    [1, 100000, 10000, 1000000].forEach(function(f){ add(la / f, lo / f); });
+  }
+  var best = null;
+  cands.forEach(function(c){ if(Math.abs(c[0]) > 90 || Math.abs(c[1]) > 180) return; var d = distKm(geo.lat, geo.lon, c[0], c[1]); if(!best || d < best.d) best = {d: d, la: c[0], lo: c[1]}; });
+  if(best && best.d < 80){ x.km = best.d; x.geom = {lat: best.la, lon: best.lo}; } else { x.km = null; x.geom = {}; }
   CARBUS.forEach(function(c){ x[c[0]] = numv(x[c[0]]); });
   return x;
 }
@@ -265,14 +270,15 @@ function loadCarbu(){
   try { $('carbul').innerHTML = '<div class="empty">Recherche des stations…</div>'; } catch(e){}
   if(!geo){ $('carbul').innerHTML = '<div class="empty">Règle ta ville dans Réglages</div>'; return; }
   var pt = "geom'POINT(" + geo.lon + ' ' + geo.lat + ")'", diag = [];
-  var tries = [['within_distance(geom, ' + pt + ', 10km)'], ['search(ville, "' + geo.ville + '")'], ['within_distance(geom, ' + pt + ', 10km)', 'prix-carburants-quotidien'], ['', null]];
+  var ptr = "geom'POINT(" + geo.lat + ' ' + geo.lon + ")'";
+  var tries = [['within_distance(geom, ' + pt + ', 10km)'], ['within_distance(geom, ' + ptr + ', 10km)'], ['search(ville, "' + geo.ville + '")'], ['within_distance(geom, ' + pt + ', 10km)', 'prix-carburants-quotidien'], ['', null]];
   var attempt = function(i){
     if(i >= tries.length) return Promise.resolve([]);
     return carbuQuery(tries[i][0], tries[i][1]).then(function(r){
-      var total = r.total, raw = r.length;
+      var total = r.total, raw = r.length, rawFirst = r[0] ? {geom: r[0].geom, latitude: r[0].latitude, longitude: r[0].longitude, ville: r[0].ville, gazole_prix: r[0].gazole_prix} : {};
       r = groupLong(r).map(normStation).filter(function(x){ return x.km == null || x.km <= 15; });
       diag.push('essai ' + (i + 1) + ' : ' + raw + '/' + total + ' → ' + r.length);
-      if(i === tries.length - 1 && raw) diag.push('ex. : ' + JSON.stringify(r[0] || {}).slice(0, 200));
+      if(raw && !r.length) diag.push('ex. : ' + JSON.stringify(rawFirst).slice(0, 220));
       return r.length ? r : attempt(i + 1);
     }, function(e){ diag.push('essai ' + (i + 1) + ' : erreur ' + e.message); return attempt(i + 1); });
   };
