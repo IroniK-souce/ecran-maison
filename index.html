@@ -297,8 +297,8 @@ body.night #night{display:block}
 
 /* ---------- thème clair (journée) ---------- */
 html,body{-webkit-transition:background-color .8s;transition:background-color .8s}
-body.clair{--bg:#eceef2;--rail:#f8f9fb;--card:#ffffff;--card2:#eef0f3;--line:rgba(20,25,40,.08);--tx:#1b1d22;--tx2:#545862;--tx3:#6b6f78;--gr:#1d9a55;--pu:#7b4fd8;--bl:#2f74d0;--ye:#a77800}
-html.clair{background:#eceef2}
+body.clair{--bg:#d9dde4;--rail:#ffffff;--card:#ffffff;--card2:#e6e9ee;--line:rgba(20,25,40,.14);--tx:#111318;--tx2:#3d414a;--tx3:#5a5f69;--gr:#1d9a55;--pu:#7b4fd8;--bl:#2f74d0;--ye:#a77800}
+html.clair{background:#d9dde4}
 body.clair .card,body.clair .sc{box-shadow:0 4px 14px rgba(20,30,60,.07)}
 body.clair .rbtn.on{background:rgba(255,140,40,.15);color:#c25e00}
 body.clair .rlogo{color:#fff}
@@ -343,6 +343,38 @@ body.clair .smot{background:#fff7cf;color:#3b3100}
 body.clair .splat{background:radial-gradient(circle at 50% 45%,rgba(255,170,90,.35) 0%,rgba(255,159,67,.06) 70%),#fff3e6}
 body.clair .qr{box-shadow:inset 0 0 0 1px var(--line)}
 body.clair .b.pri,body.clair .qadd button{color:#2a1700}
+
+
+body.clair .card,body.clair .sc,body.clair .hb,body.clair .info{border:1px solid rgba(20,25,40,.13)}
+body.clair .card,body.clair .sc{box-shadow:0 2px 6px rgba(20,30,60,.10),0 8px 22px rgba(20,30,60,.08)}
+body.clair .rail{border-right:1px solid rgba(20,25,40,.14)}
+body.clair .rbtn{color:#4a4f58}
+body.clair .box{border-color:#6f747d}
+body.clair .row{border-bottom-color:rgba(20,25,40,.12)}
+body.clair .ic{background:rgba(20,25,40,.08);color:#3d414a}
+body.clair .k-bl .ic,body.clair .k-bl .cnt{background:rgba(47,116,208,.15);color:#1f5fb8}
+body.clair .k-gr .ic{background:rgba(29,154,85,.15);color:#157a42}
+body.clair .k-pu .ic{background:rgba(123,79,216,.15);color:#5f35b8}
+body.clair .k-ye .ic{background:rgba(200,150,0,.18);color:#8a6200}
+body.clair .k-or .ic,body.clair .k-or .cnt,body.clair .plat .ic{color:#a94f00;background:rgba(255,140,40,.2)}
+body.clair .mult,body.clair .ihead,body.clair .mday.on .md,body.clair .mrow.today .md,body.clair .pk{color:#b05300}
+body.clair .qn{color:#5f35b8}
+body.clair .tag.q{color:#5f35b8;background:rgba(123,79,216,.14)}
+body.clair .tag.r{color:#1f5fb8;background:rgba(47,116,208,.14)}
+body.clair .chip{background:#ffe3c6;color:#8a4100}
+body.clair .mday{background:#eceef2;border:1px solid rgba(20,25,40,.1)}
+body.clair .mday.on{background:#ffe9d1;box-shadow:none;border-color:#f5b871}
+body.clair .plat{background:linear-gradient(120deg,#ffeedd 0%,#ffdcb8 100%);border-color:#efb57a}
+body.clair .pk span,body.clair .pmeta{color:#5e4430}
+body.clair .pbtns .b{background:#fff;border:1px solid rgba(120,70,20,.2)}
+body.clair .mot{background:#fff1a8;border-color:#e2c75a}
+body.clair .mottx{color:#2a2200}
+body.clair .mot .meta{color:#5e5020}
+body.clair .ev .x span,body.clair .sc b{color:#3d414a}
+body.clair .fld{background:#e6e9ee;border:1px solid rgba(20,25,40,.1)}
+body.clair .info.ok{color:#3d414a}
+body.clair .crow .cp{color:#137a40}
+body.clair .ev .x.c{border-color:#e07a10}
 
 /* écrans étroits : portrait, téléphone */
 @media (max-width:899px), (max-height:560px) and (max-width:1100px){
@@ -497,7 +529,7 @@ body.clair .b.pri,body.clair .qadd button{color:#2a1700}
 
     <!-- RÉGLAGES -->
     <section class="page" id="p-reglages">
-      <div class="top ptop"><div><h1>Réglages</h1><div class="dline"><span id="st">Connexion…</span> · <span id="ver">version 12/11 22:00</span></div></div><div class="tright"><div class="clk">--:--</div></div></div>
+      <div class="top ptop"><div><h1>Réglages</h1><div class="dline"><span id="st">Connexion…</span> · <span id="ver">version 12/11 22:05</span></div></div><div class="tright"><div class="clk">--:--</div></div></div>
       <div class="scroll"><div class="sets">
         <div class="card">
           <h3>Foyer</h3>
@@ -553,6 +585,6 @@ body.clair .b.pri,body.clair .qadd button{color:#2a1700}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="app.js?v=1794516720"></script>
+<script src="app.js?v=1794516898"></script>
 </body>
 </html>
