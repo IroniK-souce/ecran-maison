@@ -125,6 +125,10 @@ body.night .date{font-size:26px}
 .reptag{font-size:12px;color:#007aff;background:rgba(0,122,255,.1);padding:3px 8px;border-radius:8px;margin-left:8px;white-space:nowrap}
 .row .x{background:none;color:#c7c7cc;font-size:20px;padding:2px 8px;margin-left:4px}
 #srep{font-size:16px;margin-right:8px;border:0;border-radius:11px;background:rgba(118,118,128,.12);padding:0 8px;color:#1c1c1e;max-width:150px}
+.row.ing .box{border-color:#c7c7cc}
+.row.ing.sel .box{background:#ff9500;border-color:#ff9500}
+.row.ing:not(.sel){color:#8e8e93}
+.ingb{display:inline-block;margin-top:8px;margin-left:6px;font-size:14px;font-weight:600;color:#ff9500;background:rgba(255,149,0,.12);padding:8px 12px;border-radius:20px;border:0}
 .tap{cursor:pointer;-webkit-transition:-webkit-transform .15s;transition:transform .15s}
 .tap:active{-webkit-transform:scale(.98);transform:scale(.98)}
 #sheet{position:fixed;left:0;top:0;right:0;bottom:0;z-index:50;background:rgba(10,12,30,.45);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:40px 16px}
@@ -199,7 +203,7 @@ body.night .date{font-size:26px}
         <div class="kick">Ce soir</div>
         <div class="pn" id="pn">En attente de la suggestion du jour</div>
         <div class="sub" id="pd" style="margin-top:6px"></div>
-        <a class="btn" id="purl" href="#" target="_blank" rel="noopener" style="display:none">Voir la recette</a>
+        <a class="btn" id="purl" href="#" target="_blank" rel="noopener" style="display:none">Voir la recette</a><button class="ingb" type="button" id="pingb" style="display:none">🛒 Ingrédients</button>
       </div>
     </div></div>
 
@@ -253,6 +257,6 @@ body.night .date{font-size:26px}
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="app.js?v=1794488410"></script>
+<script src="app.js?v=1794488682"></script>
 </body>
 </html>

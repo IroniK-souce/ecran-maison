@@ -5,10 +5,24 @@
   "agenda": [],
   "plat": {
     "nom": "Quiche poulet, champignons et brocolis",
-    "temps": "10 min de préparation",
+    "temps": "35 min",
     "difficulte": "Facile",
     "source": "demotivateur.fr",
-    "url": "https://www.demotivateur.fr/food/des-idees-recettes-pas-cheres-et-faciles-a-faire-en-novembre-26716"
+    "url": "https://www.demotivateur.fr/food/recette/quiche-au-poulet-brocolis-et-champignons-804",
+    "portions": 6,
+    "ingredients": [
+      "1 brocoli",
+      "2 escalopes de poulet",
+      "1 oignon",
+      "1 pâte brisée",
+      "250 g de champignons",
+      "3 œufs",
+      "20 cl de crème liquide",
+      "Fromage râpé",
+      "Sel, poivre"
+    ]
   },
-  "plats_recents": ["Quiche poulet, champignons et brocolis"]
+  "plats_recents": [
+    "Quiche poulet, champignons et brocolis"
+  ]
 }

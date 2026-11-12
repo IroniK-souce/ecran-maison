@@ -116,6 +116,7 @@ function renderJour(){
     $('pn').textContent = p.nom;
     var bits = []; if(p.temps) bits.push(p.temps); if(p.difficulte) bits.push(p.difficulte); if(p.source) bits.push('Trouvée sur ' + p.source);
     $('pd').textContent = bits.join(' · ');
+    $('pingb').style.display = (p.ingredients && p.ingredients.length) ? '' : 'none';
     if(p.url && /^https:\/\//.test(p.url)){ $('purl').href = p.url; $('purl').style.display = ''; } else { $('purl').style.display = 'none'; }
     if(p.image){ $('pimg').innerHTML = '<img alt="" src="' + esc(p.image) + '">'; } else { $('pimg').innerHTML = '🍲'; }
   }
@@ -302,10 +303,19 @@ function openSheet(kind){
         (kind === 'taches' ? '<div class="sub" style="margin-top:8px">Une tâche « chaque mardi » n’apparaît sur l’écran que le mardi, et revient toute seule la semaine suivante.</div>' : '') +
         '<div style="text-align:right;margin-top:12px"><button class="link" type="button" data-clear2="' + kind + '">Retirer ' + (kind === 'courses' ? 'les cochés' : 'les faites') + '</button></div>';
   } else if(kind === 'plat'){
-    var p = (jour && jour.plat) || {};
+    var p = (jour && jour.plat) || {}, ing = p.ingredients || [];
     t = 'Ce soir';
-    h = '<div class="splat">' + ($('pimg').innerHTML) + '</div><div class="pn" style="font-size:28px;margin-top:14px">' + esc(p.nom || 'En attente de la suggestion du jour') + '</div><div class="ssub">' + esc($('pd').textContent) + '</div>';
+    h = '<div class="splat">' + ($('pimg').innerHTML) + '</div><div class="pn" style="font-size:28px;margin-top:14px">' + esc(p.nom || 'En attente de la suggestion du jour') + '</div><div class="ssub">' + esc($('pd').textContent) + (p.portions ? ' · ' + p.portions + ' pers.' : '') + '</div>';
     if(p.url) h += '<a class="btn" href="' + esc(p.url) + '" target="_blank" rel="noopener" style="margin-top:16px">Voir la recette</a>';
+    if(ing.length){
+      var have = {}; lists.courses.forEach(function(x){ if(!x.done) have[x.name.toLowerCase()] = 1; });
+      h += '<div class="shead">Ingrédients</div><div class="list big-list" id="ingl">';
+      ing.forEach(function(x, i){
+        var staple = /^(sel|poivre|sel, poivre|huile|eau)\b/i.test(x), on = !staple && !have[x.toLowerCase()];
+        h += '<div class="row ing' + (on ? ' sel' : '') + '" data-ing="' + i + '"><span class="box">' + (on ? '✓' : '') + '</span>' + esc(x) + (have[x.toLowerCase()] ? '<span class="reptag">déjà dans la liste</span>' : '') + '</div>';
+      });
+      h += '</div><button class="main" type="button" id="ingadd" style="width:100%;margin-top:14px;padding:13px">Ajouter à la liste de courses</button><div class="sub" id="ingmsg" style="text-align:center;margin-top:8px">Décoche ce que tu as déjà à la maison.</div>';
+    }
     var rec = ((jour && jour.plats_recents) || []).slice(1, 8);
     if(rec.length) h += '<div class="shead">Déjà proposés</div>' + rec.map(function(x){ return '<div class="arow">' + esc(x) + '</div>'; }).join('');
   } else if(kind === 'mot'){
@@ -330,6 +340,34 @@ function openSheet(kind){
   if(c2) c2.addEventListener('click', function(){
     var up = {}; lists[kind].forEach(function(x){ if(x.done && x.rep == null) up[x.id] = null; }); root.child(kind).update(up);
   });
+  if(kind === 'plat' && $('ingadd')){
+    var ingl = $('ingl'), ingRefresh = function(){
+      var n = ingl.querySelectorAll('.row.sel').length;
+      $('ingadd').textContent = n ? 'Ajouter ' + n + ' ingrédient' + (n > 1 ? 's' : '') + ' aux courses' : 'Rien à ajouter';
+    };
+    ingRefresh();
+    ingl.addEventListener('click', function(e){
+      var r = e.target; while(r && r !== ingl && !(r.getAttribute && r.getAttribute('data-ing'))) r = r.parentNode;
+      if(!r || r === ingl) return;
+      var on = r.className.indexOf(' sel') < 0;
+      r.className = on ? r.className + ' sel' : r.className.replace(' sel', '');
+      r.querySelector('.box').textContent = on ? '✓' : '';
+      ingRefresh();
+    });
+    $('ingadd').addEventListener('click', function(){
+      var ing = ((jour && jour.plat) || {}).ingredients || [], rows = ingl.querySelectorAll('.row.sel'), up = {}, n = 0, now = Date.now();
+      for(var i = 0; i < rows.length; i++){
+        var name = ing[parseInt(rows[i].getAttribute('data-ing'), 10)];
+        if(name){ up[root.child('courses').push().key] = {name: String(name).slice(0, 80), done: false, at: now + i}; n++; }
+      }
+      if(!n) return;
+      root.child('courses').update(up).then(function(){
+        $('ingmsg').textContent = n + ' ingrédient' + (n > 1 ? 's ajoutés' : ' ajouté') + ' à la liste de courses ✓';
+        for(var j = 0; j < rows.length; j++){ rows[j].className = rows[j].className.replace(' sel', ''); rows[j].querySelector('.box').textContent = ''; }
+        ingRefresh();
+      }, function(){ $('ingmsg').textContent = 'Ajout impossible pour le moment'; });
+    });
+  }
   if(kind === 'mot') $('mot2ok').addEventListener('click', function(){ $('mot').value = $('mot2').value; saveMot(); closeSheet(); });
 }
 function bindSheets(){
@@ -343,6 +381,7 @@ function bindSheets(){
       openSheet(x[1]);
     });
   });
+  $('pingb').addEventListener('click', function(){ openSheet('plat'); });
   $('sheetclose').addEventListener('click', closeSheet);
   $('sheetbody').addEventListener('click', function(e){
     var id = e.target.getAttribute && e.target.getAttribute('data-delt');
