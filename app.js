@@ -141,7 +141,9 @@ function nightCheck(d){
   cls(document.documentElement, 'night', sleep);
   if(sleep){
     var p = platDuJour();
-    $('ninfo').innerHTML = esc($('mt').textContent) + ' ' + esc($('mi').textContent) + (p && p.nom ? '<br><span>Ce soir : ' + esc(p.nom) + '</span>' : '');
+    var mt = (mot && mot.texte || '').trim();
+    $('ninfo').innerHTML = esc($('mt').textContent) + ' ' + esc($('mi').textContent) + (p && p.nom ? '<br><span>Ce soir : ' + esc(p.nom) + '</span>' : '') +
+      (mt ? '<div style="margin-top:26px"><div class="nmot">' + esc(mt) + (mot.de ? '<i>— ' + esc(mot.de) + '</i>' : '') + '</div></div>' : '');
     if(now - lastDrift > 60000){
       lastDrift = now;
       var x = Math.round(Math.random() * 80 - 40), y = Math.round(Math.random() * 60 - 30);
