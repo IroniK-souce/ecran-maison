@@ -138,6 +138,7 @@ function nightCheck(d){
   var sleep = forced || (cfg.delay > 0 && now - lastTouch > cfg.delay * 60000) || (cfg.nuit && inNight && now > wakeUntil);
   if(sleep && typing() && now - lastTouch < 600000) sleep = forced;
   cls(document.body, 'night', sleep);
+  cls(document.documentElement, 'night', sleep);
   if(sleep){
     var p = platDuJour();
     $('ninfo').innerHTML = esc($('mt').textContent) + ' ' + esc($('mi').textContent) + (p && p.nom ? '<br><span>Ce soir : ' + esc(p.nom) + '</span>' : '');
