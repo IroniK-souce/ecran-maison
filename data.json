@@ -1,51 +1,31 @@
 {
-  "date": "2026-11-12",
-  "maj": "16:47",
+  "date": "2026-11-13",
+  "maj": "06:18",
   "agenda_relie": true,
   "agenda": [],
   "plat": {
-    "nom": "Quiche poulet, champignons et brocolis",
-    "temps": "35 min",
+    "nom": "Velouté de potimarron et châtaignes rôties",
+    "temps": "40 min",
     "difficulte": "Facile",
     "source": "demotivateur.fr",
-    "url": "https://www.demotivateur.fr/food/recette/quiche-au-poulet-brocolis-et-champignons-804",
-    "portions": 6,
+    "url": "https://www.demotivateur.fr/food/recette/veloute-de-potimarron-et-chataignes-roties-3008",
+    "portions": 4,
     "ingredients": [
-      "1 brocoli",
-      "2 escalopes de poulet",
+      "1 potimarron (environ 1 kg)",
+      "200 g de châtaignes cuites",
       "1 oignon",
-      "1 pâte brisée",
-      "250 g de champignons",
-      "3 œufs",
+      "1 gousse d'ail",
+      "50 cl de bouillon de légumes",
       "20 cl de crème liquide",
-      "Fromage râpé",
+      "1 c. à soupe d'huile d'olive",
       "Sel, poivre"
     ]
   },
   "plats_recents": [
+    "Velouté de potimarron et châtaignes rôties",
     "Quiche poulet, champignons et brocolis"
   ],
   "menu": [
-    {
-      "nom": "Quiche poulet, champignons et brocolis",
-      "temps": "35 min",
-      "difficulte": "Facile",
-      "source": "demotivateur.fr",
-      "url": "https://www.demotivateur.fr/food/recette/quiche-au-poulet-brocolis-et-champignons-804",
-      "portions": 6,
-      "ingredients": [
-        "1 brocoli",
-        "2 escalopes de poulet",
-        "1 oignon",
-        "1 pâte brisée",
-        "250 g de champignons",
-        "3 œufs",
-        "20 cl de crème liquide",
-        "Fromage râpé",
-        "Sel, poivre"
-      ],
-      "date": "2026-11-12"
-    },
     {
       "date": "2026-11-13",
       "nom": "Velouté de potimarron et châtaignes rôties",
@@ -162,20 +142,6 @@
   "vigilance": {},
   "planning": [
     {
-      "date": "2026-11-12",
-      "debut": "10:00",
-      "fin": "11:30",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
-      "date": "2026-11-12",
-      "debut": "13:00",
-      "fin": "17:00",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
       "date": "2026-11-13",
       "debut": "19:00",
       "fin": "23:00",
@@ -219,6 +185,13 @@
     },
     {
       "date": "2026-11-18",
+      "debut": "19:15",
+      "fin": "22:45",
+      "nom": "CGR",
+      "qui": "Lisa"
+    },
+    {
+      "date": "2026-11-19",
       "debut": "19:15",
       "fin": "22:45",
       "nom": "CGR",
