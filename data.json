@@ -1,50 +1,29 @@
 {
-  "date": "2026-11-13",
-  "maj": "06:18",
+  "date": "2026-11-14",
+  "maj": "06:19",
   "agenda_relie": true,
   "agenda": [],
   "plat": {
-    "nom": "Velouté de potimarron et châtaignes rôties",
+    "nom": "Gratin de pâtes au jambon et au fromage",
     "temps": "40 min",
     "difficulte": "Facile",
     "source": "demotivateur.fr",
-    "url": "https://www.demotivateur.fr/food/recette/veloute-de-potimarron-et-chataignes-roties-3008",
+    "url": "https://www.demotivateur.fr/food/recette/gratin-de-pates-pas-cher-au-jambon-et-au-fromage-2623",
     "portions": 4,
     "ingredients": [
-      "1 potimarron (environ 1 kg)",
-      "200 g de châtaignes cuites",
-      "1 oignon",
-      "1 gousse d'ail",
-      "50 cl de bouillon de légumes",
-      "20 cl de crème liquide",
-      "1 c. à soupe d'huile d'olive",
-      "Sel, poivre"
+      "400 g de pâtes",
+      "4 tranches de jambon",
+      "10 cl de crème fraîche",
+      "150 g de fromage râpé",
+      "Une noix de beurre"
     ]
   },
   "plats_recents": [
+    "Gratin de pâtes au jambon et au fromage",
     "Velouté de potimarron et châtaignes rôties",
     "Quiche poulet, champignons et brocolis"
   ],
   "menu": [
-    {
-      "date": "2026-11-13",
-      "nom": "Velouté de potimarron et châtaignes rôties",
-      "temps": "40 min",
-      "difficulte": "Facile",
-      "source": "demotivateur.fr",
-      "url": "https://www.demotivateur.fr/food/recette/veloute-de-potimarron-et-chataignes-roties-3008",
-      "portions": 4,
-      "ingredients": [
-        "1 potimarron (environ 1 kg)",
-        "200 g de châtaignes cuites",
-        "1 oignon",
-        "1 gousse d'ail",
-        "50 cl de bouillon de légumes",
-        "20 cl de crème liquide",
-        "1 c. à soupe d'huile d'olive",
-        "Sel, poivre"
-      ]
-    },
     {
       "date": "2026-11-14",
       "nom": "Gratin de pâtes au jambon et au fromage",
@@ -142,13 +121,6 @@
   "vigilance": {},
   "planning": [
     {
-      "date": "2026-11-13",
-      "debut": "19:00",
-      "fin": "23:00",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
       "date": "2026-11-14",
       "debut": "10:00",
       "fin": "11:30",
@@ -194,6 +166,13 @@
       "date": "2026-11-19",
       "debut": "19:15",
       "fin": "22:45",
+      "nom": "CGR",
+      "qui": "Lisa"
+    },
+    {
+      "date": "2026-11-20",
+      "debut": "19:15",
+      "fin": "23:00",
       "nom": "CGR",
       "qui": "Lisa"
     }
