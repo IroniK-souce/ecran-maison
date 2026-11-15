@@ -1,45 +1,34 @@
 {
-  "date": "2026-11-14",
-  "maj": "06:19",
+  "date": "2026-11-15",
+  "maj": "06:17",
   "agenda_relie": true,
   "agenda": [],
   "plat": {
-    "nom": "Gratin de pâtes au jambon et au fromage",
-    "temps": "40 min",
+    "nom": "Curry de pois chiches au lait de coco et épinards",
+    "temps": "20 min",
     "difficulte": "Facile",
     "source": "demotivateur.fr",
-    "url": "https://www.demotivateur.fr/food/recette/gratin-de-pates-pas-cher-au-jambon-et-au-fromage-2623",
+    "url": "https://www.demotivateur.fr/food/recette/curry-de-pois-chiches-au-lait-de-coco-et-epinards-3014",
     "portions": 4,
     "ingredients": [
-      "400 g de pâtes",
-      "4 tranches de jambon",
-      "10 cl de crème fraîche",
-      "150 g de fromage râpé",
-      "Une noix de beurre"
+      "400 g de pois chiches cuits",
+      "150 g d'épinards frais",
+      "1 oignon",
+      "2 gousses d'ail",
+      "200 ml de lait de coco",
+      "2 c. à soupe de pâte de curry",
+      "1 c. à soupe d'huile de coco ou d'olive",
+      "Coriandre fraîche",
+      "Sel, poivre"
     ]
   },
   "plats_recents": [
+    "Curry de pois chiches au lait de coco et épinards",
     "Gratin de pâtes au jambon et au fromage",
     "Velouté de potimarron et châtaignes rôties",
     "Quiche poulet, champignons et brocolis"
   ],
   "menu": [
-    {
-      "date": "2026-11-14",
-      "nom": "Gratin de pâtes au jambon et au fromage",
-      "temps": "40 min",
-      "difficulte": "Facile",
-      "source": "demotivateur.fr",
-      "url": "https://www.demotivateur.fr/food/recette/gratin-de-pates-pas-cher-au-jambon-et-au-fromage-2623",
-      "portions": 4,
-      "ingredients": [
-        "400 g de pâtes",
-        "4 tranches de jambon",
-        "10 cl de crème fraîche",
-        "150 g de fromage râpé",
-        "Une noix de beurre"
-      ]
-    },
     {
       "date": "2026-11-15",
       "nom": "Curry de pois chiches au lait de coco et épinards",
@@ -121,20 +110,6 @@
   "vigilance": {},
   "planning": [
     {
-      "date": "2026-11-14",
-      "debut": "10:00",
-      "fin": "11:30",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
-      "date": "2026-11-14",
-      "debut": "13:00",
-      "fin": "18:30",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
       "date": "2026-11-15",
       "debut": "10:00",
       "fin": "11:30",
@@ -173,6 +148,20 @@
       "date": "2026-11-20",
       "debut": "19:15",
       "fin": "23:00",
+      "nom": "CGR",
+      "qui": "Lisa"
+    },
+    {
+      "date": "2026-11-21",
+      "debut": "10:00",
+      "fin": "11:30",
+      "nom": "CGR",
+      "qui": "Lisa"
+    },
+    {
+      "date": "2026-11-21",
+      "debut": "12:45",
+      "fin": "18:30",
       "nom": "CGR",
       "qui": "Lisa"
     }
