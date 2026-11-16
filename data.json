@@ -1,54 +1,40 @@
 {
-  "date": "2026-11-15",
-  "maj": "06:17",
+  "date": "2026-11-16",
+  "maj": "06:18",
   "agenda_relie": true,
-  "agenda": [],
+  "agenda": [
+    {
+      "date": "2026-11-22",
+      "heure": "16:25",
+      "fin": "19:15",
+      "titre": "hunger games"
+    }
+  ],
   "plat": {
-    "nom": "Curry de pois chiches au lait de coco et épinards",
-    "temps": "20 min",
+    "nom": "Papillotes de saumon aux légumes d'hiver",
+    "temps": "",
     "difficulte": "Facile",
     "source": "demotivateur.fr",
-    "url": "https://www.demotivateur.fr/food/recette/curry-de-pois-chiches-au-lait-de-coco-et-epinards-3014",
-    "portions": 4,
+    "url": "https://www.demotivateur.fr/food/des-papillotes-de-saumon-aux-legumes-colorees-et-parfumees-qui-font-craquer-pour-un-diner-convivial-46869",
+    "portions": 2,
     "ingredients": [
-      "400 g de pois chiches cuits",
-      "150 g d'épinards frais",
-      "1 oignon",
-      "2 gousses d'ail",
-      "200 ml de lait de coco",
-      "2 c. à soupe de pâte de curry",
-      "1 c. à soupe d'huile de coco ou d'olive",
-      "Coriandre fraîche",
+      "2 filets de saumon",
+      "1 carotte",
+      "1 courgette",
+      "1/2 poireau",
+      "Huile d'olive",
+      "Herbes de Provence",
       "Sel, poivre"
     ]
   },
   "plats_recents": [
+    "Papillotes de saumon aux légumes d'hiver",
     "Curry de pois chiches au lait de coco et épinards",
     "Gratin de pâtes au jambon et au fromage",
     "Velouté de potimarron et châtaignes rôties",
     "Quiche poulet, champignons et brocolis"
   ],
   "menu": [
-    {
-      "date": "2026-11-15",
-      "nom": "Curry de pois chiches au lait de coco et épinards",
-      "temps": "20 min",
-      "difficulte": "Facile",
-      "source": "demotivateur.fr",
-      "url": "https://www.demotivateur.fr/food/recette/curry-de-pois-chiches-au-lait-de-coco-et-epinards-3014",
-      "portions": 4,
-      "ingredients": [
-        "400 g de pois chiches cuits",
-        "150 g d'épinards frais",
-        "1 oignon",
-        "2 gousses d'ail",
-        "200 ml de lait de coco",
-        "2 c. à soupe de pâte de curry",
-        "1 c. à soupe d'huile de coco ou d'olive",
-        "Coriandre fraîche",
-        "Sel, poivre"
-      ]
-    },
     {
       "date": "2026-11-16",
       "nom": "Papillotes de saumon aux légumes d'hiver",
@@ -109,27 +95,6 @@
   ],
   "vigilance": {},
   "planning": [
-    {
-      "date": "2026-11-15",
-      "debut": "10:00",
-      "fin": "11:30",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
-      "date": "2026-11-15",
-      "debut": "12:45",
-      "fin": "14:45",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
-      "date": "2026-11-15",
-      "debut": "15:00",
-      "fin": "19:00",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
     {
       "date": "2026-11-18",
       "debut": "19:15",
