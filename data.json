@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-16",
+  "date": "2026-11-17",
   "maj": "06:18",
   "agenda_relie": true,
   "agenda": [
@@ -8,26 +8,36 @@
       "heure": "16:25",
       "fin": "19:15",
       "titre": "hunger games"
+    },
+    {
+      "date": "2026-11-23",
+      "heure": "17:00",
+      "fin": "22:30",
+      "titre": "Travail Padel"
     }
   ],
   "plat": {
-    "nom": "Papillotes de saumon aux légumes d'hiver",
-    "temps": "",
+    "nom": "Risotto aux champignons et parmesan",
+    "temps": "30 min",
     "difficulte": "Facile",
     "source": "demotivateur.fr",
-    "url": "https://www.demotivateur.fr/food/des-papillotes-de-saumon-aux-legumes-colorees-et-parfumees-qui-font-craquer-pour-un-diner-convivial-46869",
-    "portions": 2,
+    "url": "https://www.demotivateur.fr/food/recette/risotto-aux-champignons-et-parmesan-2922",
+    "portions": 4,
     "ingredients": [
-      "2 filets de saumon",
-      "1 carotte",
-      "1 courgette",
-      "1/2 poireau",
+      "300 g de riz arborio",
+      "400 g de champignons mélangés",
+      "1,2 l de bouillon de légumes",
+      "1 oignon",
+      "2 gousses d'ail",
+      "150 ml de vin blanc sec",
+      "100 g de parmesan râpé",
+      "50 g de beurre",
       "Huile d'olive",
-      "Herbes de Provence",
       "Sel, poivre"
     ]
   },
   "plats_recents": [
+    "Risotto aux champignons et parmesan",
     "Papillotes de saumon aux légumes d'hiver",
     "Curry de pois chiches au lait de coco et épinards",
     "Gratin de pâtes au jambon et au fromage",
@@ -35,24 +45,6 @@
     "Quiche poulet, champignons et brocolis"
   ],
   "menu": [
-    {
-      "date": "2026-11-16",
-      "nom": "Papillotes de saumon aux légumes d'hiver",
-      "temps": "",
-      "difficulte": "Facile",
-      "source": "demotivateur.fr",
-      "url": "https://www.demotivateur.fr/food/des-papillotes-de-saumon-aux-legumes-colorees-et-parfumees-qui-font-craquer-pour-un-diner-convivial-46869",
-      "portions": 2,
-      "ingredients": [
-        "2 filets de saumon",
-        "1 carotte",
-        "1 courgette",
-        "1/2 poireau",
-        "Huile d'olive",
-        "Herbes de Provence",
-        "Sel, poivre"
-      ]
-    },
     {
       "date": "2026-11-17",
       "nom": "Risotto aux champignons et parmesan",
@@ -90,6 +82,101 @@
         "Huile d'olive",
         "Épices mexicaines (facultatif)",
         "Sel, poivre"
+      ]
+    },
+    {
+      "date": "2026-11-19",
+      "nom": "Gratin de chou-fleur à la béchamel",
+      "temps": "30 min au four",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/gratin-de-chou-fleur-facile-42884",
+      "portions": 4,
+      "ingredients": [
+        "1 gros chou-fleur",
+        "50 g de beurre",
+        "50 g de farine",
+        "70 cl de lait",
+        "Sel, poivre, noix de muscade",
+        "100 g de fromage râpé"
+      ]
+    },
+    {
+      "date": "2026-11-20",
+      "nom": "Poulet aux champignons et à la crème",
+      "temps": "35 min",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/recette/poulet-aux-champignons-et-a-la-creme-2566",
+      "portions": 4,
+      "ingredients": [
+        "1 oignon",
+        "1 filet d'huile d'olive",
+        "4 blancs de poulet",
+        "250 g de champignons de Paris",
+        "10 cl de vin blanc",
+        "20 cl de crème fraîche entière",
+        "1 c. à soupe de moutarde",
+        "Poivre",
+        "1/2 bouquet de persil"
+      ]
+    },
+    {
+      "date": "2026-11-21",
+      "nom": "Gratin de pâtes au thon et sauce tomate",
+      "temps": "40 min",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/recette/gratin-de-pates-au-thon-et-sauce-tomate-1733",
+      "portions": 4,
+      "ingredients": [
+        "400 g de pâtes",
+        "300 g de thon en boîte",
+        "550 g de sauce tomate",
+        "15 cl de crème fraîche",
+        "Sel, poivre",
+        "1 gousse d'ail",
+        "1 c. à café d'herbes de Provence",
+        "150 g de fromage râpé"
+      ]
+    },
+    {
+      "date": "2026-11-22",
+      "nom": "Dahl de lentilles corail au lait de coco",
+      "temps": "25 min",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/recette/dahl-de-lentilles-corail-au-lait-de-coco-1777",
+      "portions": 4,
+      "ingredients": [
+        "200 g de lentilles corail",
+        "500 ml de bouillon de légumes",
+        "20 g de beurre",
+        "1 gousse d'ail",
+        "1 c. à café de gingembre en poudre",
+        "5 ciboules",
+        "1 c. à soupe de curry",
+        "100 g de tomates concassées",
+        "250 ml de crème ou lait de coco",
+        "4 brins de coriandre fraîche"
+      ]
+    },
+    {
+      "date": "2026-11-23",
+      "nom": "Filet mignon de porc moutarde-miel et pommes caramélisées",
+      "temps": "25 min",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/recette/filet-mignon-de-porc-a-la-moutarde-miel-et-pommes-caramelisees-3096",
+      "portions": 4,
+      "ingredients": [
+        "600 g de filet mignon de porc",
+        "2 c. à soupe de moutarde à l'ancienne",
+        "2 c. à soupe de miel",
+        "2 pommes",
+        "20 g de beurre",
+        "Sel, poivre",
+        "1 branche de thym ou de romarin"
       ]
     }
   ],
