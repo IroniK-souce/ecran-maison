@@ -1,6 +1,6 @@
 {
-  "date": "2026-11-19",
-  "maj": "06:18",
+  "date": "2026-11-20",
+  "maj": "06:17",
   "agenda_relie": true,
   "agenda": [
     {
@@ -17,22 +17,26 @@
     }
   ],
   "plat": {
-    "nom": "Gratin de chou-fleur à la béchamel",
-    "temps": "30 min au four",
+    "nom": "Poulet aux champignons et à la crème",
+    "temps": "35 min",
     "difficulte": "Facile",
     "source": "demotivateur.fr",
-    "url": "https://www.demotivateur.fr/food/gratin-de-chou-fleur-facile-42884",
+    "url": "https://www.demotivateur.fr/food/recette/poulet-aux-champignons-et-a-la-creme-2566",
     "portions": 4,
     "ingredients": [
-      "1 gros chou-fleur",
-      "50 g de beurre",
-      "50 g de farine",
-      "70 cl de lait",
-      "Sel, poivre, noix de muscade",
-      "100 g de fromage râpé"
+      "1 oignon",
+      "1 filet d'huile d'olive",
+      "4 blancs de poulet",
+      "250 g de champignons de Paris",
+      "10 cl de vin blanc",
+      "20 cl de crème fraîche entière",
+      "1 c. à soupe de moutarde",
+      "Poivre",
+      "1/2 bouquet de persil"
     ]
   },
   "plats_recents": [
+    "Poulet aux champignons et à la crème",
     "Gratin de chou-fleur à la béchamel",
     "Chili con carne express",
     "Risotto aux champignons et parmesan",
@@ -43,23 +47,6 @@
     "Quiche poulet, champignons et brocolis"
   ],
   "menu": [
-    {
-      "date": "2026-11-19",
-      "nom": "Gratin de chou-fleur à la béchamel",
-      "temps": "30 min au four",
-      "difficulte": "Facile",
-      "source": "demotivateur.fr",
-      "url": "https://www.demotivateur.fr/food/gratin-de-chou-fleur-facile-42884",
-      "portions": 4,
-      "ingredients": [
-        "1 gros chou-fleur",
-        "50 g de beurre",
-        "50 g de farine",
-        "70 cl de lait",
-        "Sel, poivre, noix de muscade",
-        "100 g de fromage râpé"
-      ]
-    },
     {
       "date": "2026-11-20",
       "nom": "Poulet aux champignons et à la crème",
@@ -142,13 +129,6 @@
   "vigilance": {},
   "planning": [
     {
-      "date": "2026-11-19",
-      "debut": "19:15",
-      "fin": "22:45",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
       "date": "2026-11-20",
       "debut": "19:15",
       "fin": "23:00",
@@ -180,6 +160,20 @@
       "date": "2026-11-25",
       "debut": "13:00",
       "fin": "17:00",
+      "nom": "CGR",
+      "qui": "Lisa"
+    },
+    {
+      "date": "2026-11-26",
+      "debut": "10:00",
+      "fin": "11:30",
+      "nom": "CGR",
+      "qui": "Lisa"
+    },
+    {
+      "date": "2026-11-26",
+      "debut": "13:00",
+      "fin": "15:45",
       "nom": "CGR",
       "qui": "Lisa"
     }
