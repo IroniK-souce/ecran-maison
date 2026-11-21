@@ -1,6 +1,6 @@
 {
-  "date": "2026-11-20",
-  "maj": "06:17",
+  "date": "2026-11-21",
+  "maj": "06:18",
   "agenda_relie": true,
   "agenda": [
     {
@@ -8,34 +8,28 @@
       "heure": "16:25",
       "fin": "19:15",
       "titre": "hunger games"
-    },
-    {
-      "date": "2026-11-23",
-      "heure": "17:00",
-      "fin": "22:30",
-      "titre": "Travail Padel"
     }
   ],
   "plat": {
-    "nom": "Poulet aux champignons et à la crème",
-    "temps": "35 min",
+    "nom": "Gratin de pâtes au thon et sauce tomate",
+    "temps": "40 min",
     "difficulte": "Facile",
     "source": "demotivateur.fr",
-    "url": "https://www.demotivateur.fr/food/recette/poulet-aux-champignons-et-a-la-creme-2566",
+    "url": "https://www.demotivateur.fr/food/recette/gratin-de-pates-au-thon-et-sauce-tomate-1733",
     "portions": 4,
     "ingredients": [
-      "1 oignon",
-      "1 filet d'huile d'olive",
-      "4 blancs de poulet",
-      "250 g de champignons de Paris",
-      "10 cl de vin blanc",
-      "20 cl de crème fraîche entière",
-      "1 c. à soupe de moutarde",
-      "Poivre",
-      "1/2 bouquet de persil"
+      "400 g de pâtes",
+      "300 g de thon en boîte",
+      "550 g de sauce tomate",
+      "15 cl de crème fraîche",
+      "Sel, poivre",
+      "1 gousse d'ail",
+      "1 c. à café d'herbes de Provence",
+      "150 g de fromage râpé"
     ]
   },
   "plats_recents": [
+    "Gratin de pâtes au thon et sauce tomate",
     "Poulet aux champignons et à la crème",
     "Gratin de chou-fleur à la béchamel",
     "Chili con carne express",
@@ -47,26 +41,6 @@
     "Quiche poulet, champignons et brocolis"
   ],
   "menu": [
-    {
-      "date": "2026-11-20",
-      "nom": "Poulet aux champignons et à la crème",
-      "temps": "35 min",
-      "difficulte": "Facile",
-      "source": "demotivateur.fr",
-      "url": "https://www.demotivateur.fr/food/recette/poulet-aux-champignons-et-a-la-creme-2566",
-      "portions": 4,
-      "ingredients": [
-        "1 oignon",
-        "1 filet d'huile d'olive",
-        "4 blancs de poulet",
-        "250 g de champignons de Paris",
-        "10 cl de vin blanc",
-        "20 cl de crème fraîche entière",
-        "1 c. à soupe de moutarde",
-        "Poivre",
-        "1/2 bouquet de persil"
-      ]
-    },
     {
       "date": "2026-11-21",
       "nom": "Gratin de pâtes au thon et sauce tomate",
@@ -129,13 +103,6 @@
   "vigilance": {},
   "planning": [
     {
-      "date": "2026-11-20",
-      "debut": "19:15",
-      "fin": "23:00",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
       "date": "2026-11-21",
       "debut": "10:00",
       "fin": "11:30",
@@ -174,6 +141,13 @@
       "date": "2026-11-26",
       "debut": "13:00",
       "fin": "15:45",
+      "nom": "CGR",
+      "qui": "Lisa"
+    },
+    {
+      "date": "2026-11-27",
+      "debut": "19:15",
+      "fin": "23:00",
       "nom": "CGR",
       "qui": "Lisa"
     }
