@@ -98,6 +98,104 @@
         "Sel, poivre",
         "1 branche de thym ou de romarin"
       ]
+    },
+    {
+      "date": "2026-11-24",
+      "nom": "Gnocchis tomate mozzarella",
+      "temps": "15 min",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/recette/gnocchis-tomate-mozzarella-2760",
+      "portions": 2,
+      "ingredients": [
+        "1 petit oignon",
+        "1 gousse d'ail",
+        "325 g de gnocchis à poêler",
+        "20 cl de sauce tomate",
+        "Sel, poivre",
+        "1 pincée d'herbes de Provence",
+        "1 boule de mozzarella",
+        "Huile d'olive",
+        "Basilic frais"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "nom": "Boulettes de bœuf, sauce tomate et poivrons",
+      "temps": "40 min",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/recette/boulettes-de-viande-hachee-sauce-tomate-et-poivrons-2015",
+      "portions": 4,
+      "ingredients": [
+        "2 poivrons rouges",
+        "1 oignon",
+        "Huile d'olive",
+        "1 boîte de tomates pelées (40 cl)",
+        "1 c. à soupe de paprika",
+        "1 bouquet d'aneth",
+        "Sel, poivre",
+        "50 g de lard",
+        "300 g de bœuf haché",
+        "1 œuf"
+      ]
+    },
+    {
+      "date": "2026-11-26",
+      "nom": "Cabillaud en croûte de chorizo",
+      "temps": "20 min",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/cabillaud-en-croute-de-chorizo-44322",
+      "portions": 4,
+      "ingredients": [
+        "4 pavés de cabillaud",
+        "120 g de chorizo",
+        "60 g de parmesan",
+        "7 c. à soupe de chapelure",
+        "40 g de beurre mou",
+        "1 botte de basilic frais",
+        "2 gousses d'ail",
+        "1 c. à café de piment d'Espelette",
+        "1 c. à soupe de pignons de pin"
+      ]
+    },
+    {
+      "date": "2026-11-27",
+      "nom": "Pâtes aux poireaux et sauce au bleu",
+      "temps": "20 min",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/recette/pates-aux-poireaux-et-sauce-au-bleu-2479",
+      "portions": 4,
+      "ingredients": [
+        "4 poireaux",
+        "Huile d'olive",
+        "Sel, poivre",
+        "400 g de pâtes",
+        "4 c. à soupe de crème fraîche",
+        "120 g de bleu",
+        "50 g de noix"
+      ]
+    },
+    {
+      "date": "2026-11-28",
+      "nom": "Coquillettes crémeuses au poulet et à la tomate",
+      "temps": "",
+      "difficulte": "Facile",
+      "source": "demotivateur.fr",
+      "url": "https://www.demotivateur.fr/food/pates-au-poulet-et-a-la-tomate-40089",
+      "portions": 4,
+      "ingredients": [
+        "400 g de filets de poulet",
+        "1 c. à café de paprika",
+        "3 brins de thym frais",
+        "1 gousse d'ail",
+        "400 g de coquillettes",
+        "200 g de sauce tomate cuisinée",
+        "10 cl de crème liquide entière",
+        "5 brins de persil"
+      ]
     }
   ],
   "vigilance": {},
