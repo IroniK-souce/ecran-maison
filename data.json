@@ -1,36 +1,27 @@
 {
-  "date": "2026-11-22",
-  "maj": "06:19",
+  "date": "2026-11-23",
+  "maj": "06:17",
   "agenda_relie": true,
-  "agenda": [
-    {
-      "date": "2026-11-22",
-      "heure": "16:25",
-      "fin": "19:15",
-      "titre": "hunger games"
-    }
-  ],
+  "agenda": [],
   "plat": {
-    "nom": "Dahl de lentilles corail au lait de coco",
+    "nom": "Filet mignon de porc moutarde-miel et pommes caramélisées",
     "temps": "25 min",
     "difficulte": "Facile",
     "source": "demotivateur.fr",
-    "url": "https://www.demotivateur.fr/food/recette/dahl-de-lentilles-corail-au-lait-de-coco-1777",
+    "url": "https://www.demotivateur.fr/food/recette/filet-mignon-de-porc-a-la-moutarde-miel-et-pommes-caramelisees-3096",
     "portions": 4,
     "ingredients": [
-      "200 g de lentilles corail",
-      "500 ml de bouillon de légumes",
+      "600 g de filet mignon de porc",
+      "2 c. à soupe de moutarde à l'ancienne",
+      "2 c. à soupe de miel",
+      "2 pommes",
       "20 g de beurre",
-      "1 gousse d'ail",
-      "1 c. à café de gingembre en poudre",
-      "5 ciboules",
-      "1 c. à soupe de curry",
-      "100 g de tomates concassées",
-      "250 ml de crème ou lait de coco",
-      "4 brins de coriandre fraîche"
+      "Sel, poivre",
+      "1 branche de thym ou de romarin"
     ]
   },
   "plats_recents": [
+    "Filet mignon de porc moutarde-miel et pommes caramélisées",
     "Dahl de lentilles corail au lait de coco",
     "Gratin de pâtes au thon et sauce tomate",
     "Poulet aux champignons et à la crème",
@@ -44,27 +35,6 @@
     "Quiche poulet, champignons et brocolis"
   ],
   "menu": [
-    {
-      "date": "2026-11-22",
-      "nom": "Dahl de lentilles corail au lait de coco",
-      "temps": "25 min",
-      "difficulte": "Facile",
-      "source": "demotivateur.fr",
-      "url": "https://www.demotivateur.fr/food/recette/dahl-de-lentilles-corail-au-lait-de-coco-1777",
-      "portions": 4,
-      "ingredients": [
-        "200 g de lentilles corail",
-        "500 ml de bouillon de légumes",
-        "20 g de beurre",
-        "1 gousse d'ail",
-        "1 c. à café de gingembre en poudre",
-        "5 ciboules",
-        "1 c. à soupe de curry",
-        "100 g de tomates concassées",
-        "250 ml de crème ou lait de coco",
-        "4 brins de coriandre fraîche"
-      ]
-    },
     {
       "date": "2026-11-23",
       "nom": "Filet mignon de porc moutarde-miel et pommes caramélisées",
