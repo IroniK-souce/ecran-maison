@@ -1,26 +1,29 @@
 {
-  "date": "2026-11-23",
+  "date": "2026-11-24",
   "maj": "06:17",
   "agenda_relie": true,
   "agenda": [],
   "plat": {
-    "nom": "Filet mignon de porc moutarde-miel et pommes caramélisées",
-    "temps": "25 min",
+    "nom": "Gnocchis tomate mozzarella",
+    "temps": "15 min",
     "difficulte": "Facile",
     "source": "demotivateur.fr",
-    "url": "https://www.demotivateur.fr/food/recette/filet-mignon-de-porc-a-la-moutarde-miel-et-pommes-caramelisees-3096",
-    "portions": 4,
+    "url": "https://www.demotivateur.fr/food/recette/gnocchis-tomate-mozzarella-2760",
+    "portions": 2,
     "ingredients": [
-      "600 g de filet mignon de porc",
-      "2 c. à soupe de moutarde à l'ancienne",
-      "2 c. à soupe de miel",
-      "2 pommes",
-      "20 g de beurre",
+      "1 petit oignon",
+      "1 gousse d'ail",
+      "325 g de gnocchis à poêler",
+      "20 cl de sauce tomate",
       "Sel, poivre",
-      "1 branche de thym ou de romarin"
+      "1 pincée d'herbes de Provence",
+      "1 boule de mozzarella",
+      "Huile d'olive",
+      "Basilic frais"
     ]
   },
   "plats_recents": [
+    "Gnocchis tomate mozzarella",
     "Filet mignon de porc moutarde-miel et pommes caramélisées",
     "Dahl de lentilles corail au lait de coco",
     "Gratin de pâtes au thon et sauce tomate",
@@ -35,24 +38,6 @@
     "Quiche poulet, champignons et brocolis"
   ],
   "menu": [
-    {
-      "date": "2026-11-23",
-      "nom": "Filet mignon de porc moutarde-miel et pommes caramélisées",
-      "temps": "25 min",
-      "difficulte": "Facile",
-      "source": "demotivateur.fr",
-      "url": "https://www.demotivateur.fr/food/recette/filet-mignon-de-porc-a-la-moutarde-miel-et-pommes-caramelisees-3096",
-      "portions": 4,
-      "ingredients": [
-        "600 g de filet mignon de porc",
-        "2 c. à soupe de moutarde à l'ancienne",
-        "2 c. à soupe de miel",
-        "2 pommes",
-        "20 g de beurre",
-        "Sel, poivre",
-        "1 branche de thym ou de romarin"
-      ]
-    },
     {
       "date": "2026-11-24",
       "nom": "Gnocchis tomate mozzarella",
@@ -200,6 +185,13 @@
       "date": "2026-11-28",
       "debut": "12:45",
       "fin": "18:30",
+      "nom": "CGR",
+      "qui": "Lisa"
+    },
+    {
+      "date": "2026-11-30",
+      "debut": "19:15",
+      "fin": "23:00",
       "nom": "CGR",
       "qui": "Lisa"
     }
