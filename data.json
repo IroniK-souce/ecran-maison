@@ -1,28 +1,30 @@
 {
-  "date": "2026-11-24",
-  "maj": "06:17",
+  "date": "2026-11-25",
+  "maj": "06:18",
   "agenda_relie": true,
   "agenda": [],
   "plat": {
-    "nom": "Gnocchis tomate mozzarella",
-    "temps": "15 min",
+    "nom": "Boulettes de bœuf, sauce tomate et poivrons",
+    "temps": "40 min",
     "difficulte": "Facile",
     "source": "demotivateur.fr",
-    "url": "https://www.demotivateur.fr/food/recette/gnocchis-tomate-mozzarella-2760",
-    "portions": 2,
+    "url": "https://www.demotivateur.fr/food/recette/boulettes-de-viande-hachee-sauce-tomate-et-poivrons-2015",
+    "portions": 4,
     "ingredients": [
-      "1 petit oignon",
-      "1 gousse d'ail",
-      "325 g de gnocchis à poêler",
-      "20 cl de sauce tomate",
-      "Sel, poivre",
-      "1 pincée d'herbes de Provence",
-      "1 boule de mozzarella",
+      "2 poivrons rouges",
+      "1 oignon",
       "Huile d'olive",
-      "Basilic frais"
+      "1 boîte de tomates pelées (40 cl)",
+      "1 c. à soupe de paprika",
+      "1 bouquet d'aneth",
+      "Sel, poivre",
+      "50 g de lard",
+      "300 g de bœuf haché",
+      "1 œuf"
     ]
   },
   "plats_recents": [
+    "Boulettes de bœuf, sauce tomate et poivrons",
     "Gnocchis tomate mozzarella",
     "Filet mignon de porc moutarde-miel et pommes caramélisées",
     "Dahl de lentilles corail au lait de coco",
@@ -38,26 +40,6 @@
     "Quiche poulet, champignons et brocolis"
   ],
   "menu": [
-    {
-      "date": "2026-11-24",
-      "nom": "Gnocchis tomate mozzarella",
-      "temps": "15 min",
-      "difficulte": "Facile",
-      "source": "demotivateur.fr",
-      "url": "https://www.demotivateur.fr/food/recette/gnocchis-tomate-mozzarella-2760",
-      "portions": 2,
-      "ingredients": [
-        "1 petit oignon",
-        "1 gousse d'ail",
-        "325 g de gnocchis à poêler",
-        "20 cl de sauce tomate",
-        "Sel, poivre",
-        "1 pincée d'herbes de Provence",
-        "1 boule de mozzarella",
-        "Huile d'olive",
-        "Basilic frais"
-      ]
-    },
     {
       "date": "2026-11-25",
       "nom": "Boulettes de bœuf, sauce tomate et poivrons",
