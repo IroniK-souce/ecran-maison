@@ -1,146 +1,204 @@
 {
-  "date": "2026-11-26",
-  "maj": "06:17",
-  "agenda_relie": true,
-  "agenda": [],
-  "plat": {
-    "nom": "Cabillaud en croûte de chorizo",
-    "temps": "20 min",
-    "difficulte": "Facile",
-    "source": "demotivateur.fr",
-    "url": "https://www.demotivateur.fr/food/cabillaud-en-croute-de-chorizo-44322",
-    "portions": 4,
-    "ingredients": [
-      "4 pavés de cabillaud",
-      "120 g de chorizo",
-      "60 g de parmesan",
-      "7 c. à soupe de chapelure",
-      "40 g de beurre mou",
-      "1 botte de basilic frais",
-      "2 gousses d'ail",
-      "1 c. à café de piment d'Espelette",
-      "1 c. à soupe de pignons de pin"
-    ]
-  },
-  "plats_recents": [
-    "Cabillaud en croûte de chorizo",
-    "Boulettes de bœuf, sauce tomate et poivrons",
-    "Gnocchis tomate mozzarella",
-    "Filet mignon de porc moutarde-miel et pommes caramélisées",
-    "Dahl de lentilles corail au lait de coco",
-    "Gratin de pâtes au thon et sauce tomate",
-    "Poulet aux champignons et à la crème",
-    "Gratin de chou-fleur à la béchamel",
-    "Chili con carne express",
-    "Risotto aux champignons et parmesan",
-    "Papillotes de saumon aux légumes d'hiver",
-    "Curry de pois chiches au lait de coco et épinards",
-    "Gratin de pâtes au jambon et au fromage",
-    "Velouté de potimarron et châtaignes rôties",
-    "Quiche poulet, champignons et brocolis"
-  ],
-  "menu": [
-    {
-      "date": "2026-11-26",
-      "nom": "Cabillaud en croûte de chorizo",
-      "temps": "20 min",
-      "difficulte": "Facile",
-      "source": "demotivateur.fr",
-      "url": "https://www.demotivateur.fr/food/cabillaud-en-croute-de-chorizo-44322",
-      "portions": 4,
-      "ingredients": [
-        "4 pavés de cabillaud",
-        "120 g de chorizo",
-        "60 g de parmesan",
-        "7 c. à soupe de chapelure",
-        "40 g de beurre mou",
-        "1 botte de basilic frais",
-        "2 gousses d'ail",
-        "1 c. à café de piment d'Espelette",
-        "1 c. à soupe de pignons de pin"
-      ]
-    },
-    {
-      "date": "2026-11-27",
-      "nom": "Pâtes aux poireaux et sauce au bleu",
-      "temps": "20 min",
-      "difficulte": "Facile",
-      "source": "demotivateur.fr",
-      "url": "https://www.demotivateur.fr/food/recette/pates-aux-poireaux-et-sauce-au-bleu-2479",
-      "portions": 4,
-      "ingredients": [
-        "4 poireaux",
-        "Huile d'olive",
-        "Sel, poivre",
-        "400 g de pâtes",
-        "4 c. à soupe de crème fraîche",
-        "120 g de bleu",
-        "50 g de noix"
-      ]
-    },
-    {
-      "date": "2026-11-28",
-      "nom": "Coquillettes crémeuses au poulet et à la tomate",
-      "temps": "",
-      "difficulte": "Facile",
-      "source": "demotivateur.fr",
-      "url": "https://www.demotivateur.fr/food/pates-au-poulet-et-a-la-tomate-40089",
-      "portions": 4,
-      "ingredients": [
-        "400 g de filets de poulet",
-        "1 c. à café de paprika",
-        "3 brins de thym frais",
-        "1 gousse d'ail",
-        "400 g de coquillettes",
-        "200 g de sauce tomate cuisinée",
-        "10 cl de crème liquide entière",
-        "5 brins de persil"
-      ]
-    }
-  ],
-  "vigilance": {},
-  "planning": [
-    {
-      "date": "2026-11-26",
-      "debut": "10:00",
-      "fin": "11:30",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
-      "date": "2026-11-26",
-      "debut": "13:00",
-      "fin": "15:45",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
-      "date": "2026-11-27",
-      "debut": "19:15",
-      "fin": "23:00",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
-      "date": "2026-11-28",
-      "debut": "10:00",
-      "fin": "11:30",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
-      "date": "2026-11-28",
-      "debut": "12:45",
-      "fin": "18:30",
-      "nom": "CGR",
-      "qui": "Lisa"
-    },
-    {
-      "date": "2026-11-30",
-      "debut": "19:15",
-      "fin": "23:00",
-      "nom": "CGR",
-      "qui": "Lisa"
-    }
+ "date": "2026-11-27",
+ "maj": "06:18",
+ "agenda_relie": true,
+ "agenda": [],
+ "plat": {
+  "nom": "Pâtes aux poireaux et sauce au bleu",
+  "temps": "20 min",
+  "difficulte": "Facile",
+  "source": "demotivateur.fr",
+  "url": "https://www.demotivateur.fr/food/recette/pates-aux-poireaux-et-sauce-au-bleu-2479",
+  "portions": 4,
+  "ingredients": [
+   "4 poireaux",
+   "Huile d'olive",
+   "Sel, poivre",
+   "400 g de pâtes",
+   "4 c. à soupe de crème fraîche",
+   "120 g de bleu",
+   "50 g de noix"
   ]
+ },
+ "plats_recents": [
+  "Pâtes aux poireaux et sauce au bleu",
+  "Cabillaud en croûte de chorizo",
+  "Boulettes de bœuf, sauce tomate et poivrons",
+  "Gnocchis tomate mozzarella",
+  "Filet mignon de porc moutarde-miel et pommes caramélisées",
+  "Dahl de lentilles corail au lait de coco",
+  "Gratin de pâtes au thon et sauce tomate",
+  "Poulet aux champignons et à la crème",
+  "Gratin de chou-fleur à la béchamel",
+  "Chili con carne express",
+  "Risotto aux champignons et parmesan",
+  "Papillotes de saumon aux légumes d'hiver",
+  "Curry de pois chiches au lait de coco et épinards",
+  "Gratin de pâtes au jambon et au fromage",
+  "Velouté de potimarron et châtaignes rôties",
+  "Quiche poulet, champignons et brocolis"
+ ],
+ "menu": [
+  {
+   "date": "2026-11-27",
+   "nom": "Pâtes aux poireaux et sauce au bleu",
+   "temps": "20 min",
+   "difficulte": "Facile",
+   "source": "demotivateur.fr",
+   "url": "https://www.demotivateur.fr/food/recette/pates-aux-poireaux-et-sauce-au-bleu-2479",
+   "portions": 4,
+   "ingredients": [
+    "4 poireaux",
+    "Huile d'olive",
+    "Sel, poivre",
+    "400 g de pâtes",
+    "4 c. à soupe de crème fraîche",
+    "120 g de bleu",
+    "50 g de noix"
+   ]
+  },
+  {
+   "date": "2026-11-28",
+   "nom": "Coquillettes crémeuses au poulet et à la tomate",
+   "temps": "",
+   "difficulte": "Facile",
+   "source": "demotivateur.fr",
+   "url": "https://www.demotivateur.fr/food/pates-au-poulet-et-a-la-tomate-40089",
+   "portions": 4,
+   "ingredients": [
+    "400 g de filets de poulet",
+    "1 c. à café de paprika",
+    "3 brins de thym frais",
+    "1 gousse d'ail",
+    "400 g de coquillettes",
+    "200 g de sauce tomate cuisinée",
+    "10 cl de crème liquide entière",
+    "5 brins de persil"
+   ]
+  },
+  {
+   "date": "2026-11-29",
+   "nom": "Blanquette de légumes d'hiver",
+   "temps": "30 min",
+   "difficulte": "Facile",
+   "source": "demotivateur.fr",
+   "url": "https://www.demotivateur.fr/food/blanquette-aux-legumes-la-recette-vegetarienne-prete-en-20-minutes-parfaite-pour-un-dimanche-en-famille-47397",
+   "portions": 4,
+   "ingredients": [
+    "6 carottes",
+    "4 poireaux",
+    "300 g de champignons",
+    "20 cl de crème liquide entière",
+    "50 cl de bouillon de légumes",
+    "1 bouquet garni",
+    "Sel, poivre"
+   ]
+  },
+  {
+   "date": "2026-11-30",
+   "nom": "Saucisses aux lentilles",
+   "temps": "",
+   "difficulte": "Facile",
+   "source": "demotivateur.fr",
+   "url": "https://www.demotivateur.fr/food/saucisses-aux-lentilles-18119",
+   "portions": 2,
+   "ingredients": [
+    "200 g de lentilles vertes",
+    "2 saucisses de Toulouse",
+    "2 carottes",
+    "1 oignon rouge",
+    "1 pomme de terre",
+    "1 gousse d'ail",
+    "Quelques feuilles de laurier",
+    "1 poignée de coriandre",
+    "Huile d'olive",
+    "Poivre"
+   ]
+  },
+  {
+   "date": "2026-12-01",
+   "nom": "Saumon à la crème et au pesto",
+   "temps": "30 min",
+   "difficulte": "Facile",
+   "source": "demotivateur.fr",
+   "url": "https://www.demotivateur.fr/food/recette/saumon-a-la-creme-et-au-pesto-2639",
+   "portions": 4,
+   "ingredients": [
+    "4 pavés de saumon",
+    "2 échalotes",
+    "20 g de beurre",
+    "20 cl de crème fraîche entière",
+    "3 c. à soupe de pesto",
+    "Huile d'olive",
+    "Poivre"
+   ]
+  },
+  {
+   "date": "2026-12-02",
+   "nom": "Gratin de pâtes à la viande hachée",
+   "temps": "35 min",
+   "difficulte": "Facile",
+   "source": "demotivateur.fr",
+   "url": "https://www.demotivateur.fr/food/recette/gratin-de-pates-facile-et-rapide-a-la-viande-hachee-2020",
+   "portions": 4,
+   "ingredients": [
+    "400 g de pâtes",
+    "250 g de viande hachée",
+    "1 boîte de pulpe de tomates",
+    "1 oignon",
+    "150 g de fromage râpé",
+    "Huile d'olive",
+    "Sel, poivre"
+   ]
+  },
+  {
+   "date": "2026-12-03",
+   "nom": "Tarte fine aux poireaux et chèvre frais",
+   "temps": "30 min",
+   "difficulte": "Facile",
+   "source": "demotivateur.fr",
+   "url": "https://www.demotivateur.fr/food/vous-allez-adorer-cette-tarte-fine-vegetarienne-et-gourmande-pour-un-diner-express-en-moins-de-30-minutes-46829",
+   "portions": 6,
+   "ingredients": [
+    "1 pâte feuilletée",
+    "3 poireaux",
+    "150 g de chèvre frais",
+    "2 œufs",
+    "20 cl de crème",
+    "Huile d'olive",
+    "Sel, poivre"
+   ]
+  }
+ ],
+ "vigilance": {},
+ "planning": [
+  {
+   "date": "2026-11-27",
+   "debut": "19:15",
+   "fin": "23:00",
+   "nom": "CGR",
+   "qui": "Lisa"
+  },
+  {
+   "date": "2026-11-28",
+   "debut": "10:00",
+   "fin": "11:30",
+   "nom": "CGR",
+   "qui": "Lisa"
+  },
+  {
+   "date": "2026-11-28",
+   "debut": "12:45",
+   "fin": "18:30",
+   "nom": "CGR",
+   "qui": "Lisa"
+  },
+  {
+   "date": "2026-11-30",
+   "debut": "19:15",
+   "fin": "23:00",
+   "nom": "CGR",
+   "qui": "Lisa"
+  }
+ ]
 }
