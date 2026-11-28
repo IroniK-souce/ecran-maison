@@ -1,26 +1,28 @@
 {
- "date": "2026-11-27",
+ "date": "2026-11-28",
  "maj": "06:18",
  "agenda_relie": true,
  "agenda": [],
  "plat": {
-  "nom": "Pâtes aux poireaux et sauce au bleu",
-  "temps": "20 min",
+  "nom": "Coquillettes crémeuses au poulet et à la tomate",
+  "temps": "",
   "difficulte": "Facile",
   "source": "demotivateur.fr",
-  "url": "https://www.demotivateur.fr/food/recette/pates-aux-poireaux-et-sauce-au-bleu-2479",
+  "url": "https://www.demotivateur.fr/food/pates-au-poulet-et-a-la-tomate-40089",
   "portions": 4,
   "ingredients": [
-   "4 poireaux",
-   "Huile d'olive",
-   "Sel, poivre",
-   "400 g de pâtes",
-   "4 c. à soupe de crème fraîche",
-   "120 g de bleu",
-   "50 g de noix"
+   "400 g de filets de poulet",
+   "1 c. à café de paprika",
+   "3 brins de thym frais",
+   "1 gousse d'ail",
+   "400 g de coquillettes",
+   "200 g de sauce tomate cuisinée",
+   "10 cl de crème liquide entière",
+   "5 brins de persil"
   ]
  },
  "plats_recents": [
+  "Coquillettes crémeuses au poulet et à la tomate",
   "Pâtes aux poireaux et sauce au bleu",
   "Cabillaud en croûte de chorizo",
   "Boulettes de bœuf, sauce tomate et poivrons",
@@ -39,24 +41,6 @@
   "Quiche poulet, champignons et brocolis"
  ],
  "menu": [
-  {
-   "date": "2026-11-27",
-   "nom": "Pâtes aux poireaux et sauce au bleu",
-   "temps": "20 min",
-   "difficulte": "Facile",
-   "source": "demotivateur.fr",
-   "url": "https://www.demotivateur.fr/food/recette/pates-aux-poireaux-et-sauce-au-bleu-2479",
-   "portions": 4,
-   "ingredients": [
-    "4 poireaux",
-    "Huile d'olive",
-    "Sel, poivre",
-    "400 g de pâtes",
-    "4 c. à soupe de crème fraîche",
-    "120 g de bleu",
-    "50 g de noix"
-   ]
-  },
   {
    "date": "2026-11-28",
    "nom": "Coquillettes crémeuses au poulet et à la tomate",
@@ -172,13 +156,6 @@
  ],
  "vigilance": {},
  "planning": [
-  {
-   "date": "2026-11-27",
-   "debut": "19:15",
-   "fin": "23:00",
-   "nom": "CGR",
-   "qui": "Lisa"
-  },
   {
    "date": "2026-11-28",
    "debut": "10:00",
